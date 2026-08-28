@@ -16,6 +16,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# The `preview-harness` run lives in `preview-comment.yml` (per-PR visual diff) and
+# `preview-baselines.yml` (publish on main), not here — running it in both would pay for
+# Chromium and the whole fixture sweep twice on every PR that touches the panel.
 jobs:
   build:
     name: Build and test
@@ -40,28 +43,3 @@ jobs:
         run: xvfb-run -a npm run test:electron
       - name: Package
         run: npm run package
-
-  harness:
-    name: Preview harness
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - name: Wire-side contract
-        run: npm run harness:contract
-      - name: Snapshot captures
-        run: npm run harness:snapshot
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: always()
-        with:
-          name: preview-harness-out
-          path: preview-harness/out/
-          if-no-files-found: ignore

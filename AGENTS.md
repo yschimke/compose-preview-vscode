@@ -67,6 +67,30 @@ their outputs are committed, so CI and the harness never need it:
   checkout's `samples/wear/build/compose-previews/renders`.
 - `preview-harness/fixtures/spatial-xr-real.gen.mjs` — needs a real XR render.
 
+## Visual evidence
+
+A change that can move the panel's pixels gets a before/after table on its PR
+automatically: `preview-comment.yml` renders every `preview-harness` fixture ×
+dark/light, diffs it against the baselines on `preview/main`, and posts a sticky
+comment. `preview-baselines.yml` republishes `preview/main` on every merge.
+
+- **The harness runs there, not in `ci.yml`.** Running it in both would pay for
+  Chromium and the whole fixture sweep twice per PR.
+- **The diff is perceptual, not byte-exact.** Chromium's rasterisation is not
+  bitwise-deterministic between runs, so pixelmatch (AA-aware) filters the ±1-channel
+  edge jitter. Without that filter every PR shows fake "changed" rows.
+- **A new surface needs a fixture** in `preview-harness/fixtures/`, or the next change
+  to it is invisible to the diff.
+- `harness:contract` runs alongside the captures and catches what pixels cannot — e.g.
+  a chip that stops posting `setDataExtensionEnabled` moves nothing visually.
+
+This machinery is a **copy** of the pipeline in yschimke/compose-ai-tools, which still
+diffs the `compose-preview serve` page captures with the same script. Copied rather
+than shared: the two repositories diff different surfaces, `preview-diff.py` is generic
+(it keys on the filename and nothing else), and a cross-repo `uses:` would re-couple
+this repo's CI to that repo's default branch. If you fix a real bug in the differ,
+consider whether the other copy has it too — that is the accepted cost.
+
 ## Vendored protocol fixtures
 
 `protocol-fixtures/` is a **copy** of `docs/daemon/protocol-fixtures/` from upstream,

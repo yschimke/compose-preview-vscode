@@ -1,0 +1,57 @@
+name: Preview Comment
+
+# Posts a sticky before/after comment on PRs that can change the panel's rendered look.
+# Baseline is `preview/main`; per-PR captures accumulate on `preview/pr` so the comment's
+# image URLs stay resolvable after merge.
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'media/**'
+      - 'preview-harness/**'
+      - 'spatial-fixtures/**'
+      - 'esbuild.webview.mjs'
+      - 'tsconfig.webview.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/actions/preview-baselines/**'
+      - '.github/actions/preview-comment/**'
+      - '.github/actions/lib/preview-diff.py'
+      - '.github/workflows/preview-comment.yml'
+  # Manual re-run, for when the `pull_request` trigger is missed and the sticky comment
+  # is left describing an older head. `pr` is required in practice: a dispatch carries no
+  # `pull_request` event, so without it the comment step has no number to post to and
+  # 404s *after* doing all the capture work — a red check that says nothing about the diff.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number to post the comparison to'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Per-PR group so a fast-follow push cancels the in-flight diff for the same PR but
+  # leaves other PRs alone.
+  group: preview-comment-${{ github.event.pull_request.number || inputs.pr || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    name: Compare preview captures
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/preview-comment
+        with:
+          # Empty on a `pull_request` run, where the action falls back to the event's own
+          # PR number.
+          pr-number: ${{ inputs.pr }}

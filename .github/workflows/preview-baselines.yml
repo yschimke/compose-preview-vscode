@@ -1,0 +1,53 @@
+name: Preview Baselines
+
+# Publishes every `preview-harness` fixture × dark/light theme to `preview/main`, so
+# that branch is a browsable gallery on GitHub and the "before" state for
+# `preview-comment.yml` on PRs.
+#
+# This pipeline came from yschimke/compose-ai-tools, where it used to capture BOTH this
+# harness and the serve pages onto a shared `vscode-preview/main`. When the extension
+# split out, the machinery stayed there and this repository was left capturing PNGs and
+# comparing them to nothing. It is a copy rather than a cross-repo `uses:` because that
+# would re-couple this repo's CI to that repo's default branch — the coupling the split
+# exists to remove — and because the two now diff different surfaces.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'media/**'
+      - 'preview-harness/**'
+      - 'spatial-fixtures/**'
+      - 'esbuild.webview.mjs'
+      - 'tsconfig.webview.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/actions/preview-baselines/**'
+      - '.github/actions/preview-comment/**'
+      - '.github/actions/lib/preview-diff.py'
+      - '.github/workflows/preview-baselines.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preview-baselines
+  # This workflow only ever publishes the "before" state for `preview-comment.yml`, so a
+  # cancelled run leaves `preview/main` behind the commits it skipped and every later PR
+  # inherits their diff. There is no PR trigger here at all — push-to-main and dispatch
+  # only — so cancelling can never be the right call.
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update preview/main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The composite action pushes via an explicit token in the remote URL, so the
+          # default git credentials do not need persisting here.
+          persist-credentials: false
+      - uses: ./.github/actions/preview-baselines
