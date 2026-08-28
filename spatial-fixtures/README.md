@@ -23,7 +23,7 @@ spatial-fixtures/
 
 The panel PNGs **and** the companion `semantics-tree.json` come from real Compose:
 the desktop `RenderEngine` renders each panel composable
-([`SpatialPanelFixtures.kt`](../../daemon/desktop/src/test/kotlin/ee/schimke/composeai/daemon/SpatialPanelFixtures.kt))
+([`SpatialPanelFixtures.kt`](https://github.com/yschimke/compose-ai-tools/blob/main/daemon/desktop/src/test/kotlin/ee/schimke/composeai/daemon/SpatialPanelFixtures.kt))
 to a texture and harvests its real Compose semantics for the wireframe, so the two
 can't drift. Regenerate (writes `scene.json` + `semantics-tree.json` + `panels/*.png`):
 

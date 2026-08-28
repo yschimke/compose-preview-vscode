@@ -112,17 +112,17 @@ To preview interactively, serve the extension root and open
 `http://localhost:.../preview-harness/index.html`:
 
 ```sh
-npx --yes http-server -c-1 .       # from vscode-extension/
+npx --yes http-server -c-1 .       # from the repo root
 ```
 
 ## The serve harness moved
 
 The `compose-preview serve` specs — the standalone page captures, the daemon-backed render lanes,
 the playground end-to-end and the bundle-upload flow — used to live here and now live in
-[`preview-server/preview-harness/`](../../preview-server/preview-harness/). They were never the
+[`preview-server/preview-harness/`](https://github.com/yschimke/compose-ai-tools/blob/main/preview-server/preview-harness/). They were never the
 panel's: they drive the server's web surfaces, and having them here made 167 of `harness:snapshot`'s
 205 tests somebody else's. See that directory's README, and
-[docs/design/PREVIEW_SERVER_SPLIT.md](../../docs/design/PREVIEW_SERVER_SPLIT.md) for why.
+[docs/design/PREVIEW_SERVER_SPLIT.md](https://github.com/yschimke/compose-ai-tools/blob/main/docs/design/PREVIEW_SERVER_SPLIT.md) for why.
 
 What that means for this harness:
 

@@ -130,13 +130,12 @@ describe("daemon framing", () => {
         // assert the decoded JSON matches. Catches regressions in encode
         // (length miscounts) and decode (boundary mishandling) against the
         // exact shapes the daemon uses on the wire.
+        // Vendored from yschimke/compose-ai-tools at the release
+        // `plugin-version.json` pins; see `protocol-fixtures/README.md`.
         const fixturesDir = path.resolve(
             __dirname,
             "..",
             "..",
-            "..",
-            "docs",
-            "daemon",
             "protocol-fixtures",
         );
         const files = fs

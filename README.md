@@ -145,8 +145,8 @@ font browser backed by the keyless Google Fonts catalog (no API key required):
 
 ## Links
 
-- [Source & documentation](https://github.com/yschimke/compose-ai-tools)
-- [Issue tracker](https://github.com/yschimke/compose-ai-tools/issues)
+- [Extension source & issues](https://github.com/yschimke/compose-preview-vscode)
+- [Compose Preview plugin, CLI and daemon](https://github.com/yschimke/compose-ai-tools)
 - [Changelog](https://github.com/yschimke/compose-ai-tools/blob/main/CHANGELOG.md)
 
 ## License

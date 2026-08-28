@@ -2,7 +2,8 @@
  * TypeScript mirrors of the locked v2 protocol from
  * `daemon/core/src/main/kotlin/ee/schimke/composeai/daemon/protocol/Messages.kt`.
  * Kept hand-rolled (no generator) so the round-trip golden fixtures under
- * `docs/daemon/protocol-fixtures/` are the only authority both sides depend on.
+ * the vendored `protocol-fixtures/` (see its README) are the only authority both
+ * sides depend on.
  *
  * Spec: docs/daemon/PROTOCOL.md (v2). v2 introduced `extensions/{list,enable,disable}`
  * and emptied the default `initialize.capabilities.{dataProducts,dataExtensions,

@@ -16,7 +16,7 @@ right and sufficient surface for a layout preview.
 
 The wire format is owned upstream in
 [`../shared/spatialScene.ts`](../shared/spatialScene.ts) (prose spec:
-[`docs/design/SPATIAL_SCENE_CONTRACT.md`](../../../../docs/design/SPATIAL_SCENE_CONTRACT.md)).
+[`docs/design/SPATIAL_SCENE_CONTRACT.md`](https://github.com/yschimke/compose-ai-tools/blob/main/docs/design/SPATIAL_SCENE_CONTRACT.md)).
 Units are dp; the frame is right-handed (+x right, +y up, +z toward the
 viewer), identity rotation faces +z. The producer (`:renderer-xr`, later)
 emits exactly this shape; this viewer consumes it and the committed

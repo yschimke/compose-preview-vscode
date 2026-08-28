@@ -45,13 +45,43 @@ import {
 } from "./_utils.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, "../../..");
+
+// The scene under the overlay is a real `:samples:wear:composePreviewRenderAll`
+// render, and that sample lives in yschimke/compose-ai-tools — not here. This is
+// a REGENERATION-only dependency: `a11y-wear.json` is committed, so the harness
+// and CI never need the PNG. Only re-running this generator does.
+//
+// Point `WEAR_SAMPLE_RENDERS` at the render directory of a compose-ai-tools
+// checkout that has run `./gradlew :samples:wear:composePreviewRenderAll`:
+//
+//   WEAR_SAMPLE_RENDERS=../compose-ai-tools/samples/wear/build/compose-previews/renders \
+//     node preview-harness/fixtures/a11y-wear.gen.mjs > preview-harness/fixtures/a11y-wear.json
+const RENDER_DIR =
+    process.env.WEAR_SAMPLE_RENDERS ??
+    resolve(__dirname, "../../../compose-ai-tools/samples/wear/build/compose-previews/renders");
 const REAL_PNG = resolve(
-    REPO_ROOT,
-    "samples/wear/build/compose-previews/renders",
+    RENDER_DIR,
     "PreviewsKt.ActivityListPreview_Devices_-_Small_Round.png",
 );
-const imageData = readFileSync(REAL_PNG).toString("base64");
+
+let imageBytes;
+try {
+    imageBytes = readFileSync(REAL_PNG);
+} catch (cause) {
+    // Fail with the fix rather than ENOENT. Post-split the missing file is the
+    // expected state for anyone who has not checked out the sample repo, and a
+    // bare stack trace makes that look like a broken generator.
+    throw new Error(
+        `a11y-wear.gen.mjs could not read the source render:\n  ${REAL_PNG}\n\n` +
+            "That render is produced by yschimke/compose-ai-tools, not by this repo. Check it " +
+            "out, run `./gradlew :samples:wear:composePreviewRenderAll`, and set " +
+            "WEAR_SAMPLE_RENDERS to its samples/wear/build/compose-previews/renders directory.\n\n" +
+            "You only need this to REGENERATE the fixture — `a11y-wear.json` is committed, so " +
+            "the harness and CI run without it.",
+        { cause },
+    );
+}
+const imageData = imageBytes.toString("base64");
 
 // Pixel-space coordinates against the rendered 384×384 small-round
 // frame. Eyeballed off the captured PNG so on-image overlay boxes

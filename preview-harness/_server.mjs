@@ -41,13 +41,6 @@ const mimeByExt = {
     ".map": "application/json; charset=utf-8",
 };
 
-// The CLI viewer's CSS/JS, resolved from this module rather than from the server root so it holds
-// however the harness is booted (in-process or standalone).
-const SERVE_ASSETS_DIR = resolve(
-    harnessDir,
-    "../../cli/serve/src/main/resources/ee/schimke/composeai/cli/serve/assets",
-);
-
 export function startServer(root, port = 0) {
     return new Promise((resolveServer) => {
         const server = createServer(async (req, res) => {
@@ -57,50 +50,12 @@ export function startServer(root, port = 0) {
                     /^\/+/,
                     "",
                 );
-                // Serve-page fixtures embed the CLI viewer's hashed asset URLs
-                // (`/assets/serve/<hash>/serve.css`). Those live in the CLI's resources, not under
-                // the extension root, so without this they 404 — which is why every `serve-*` page
-                // capture has been rendering unstyled and with no JS at all, making the captures
-                // far weaker evidence than they look (a JS-driven surface could regress or be
-                // deleted and the capture would not move). The hash is cache-busting and changes
-                // whenever the asset does, so match on the basename and ignore it.
-                const assetMatch = /^assets\/serve\/[^/]+\/([^/]+)$/.exec(rel);
-                if (assetMatch) {
-                    const name = assetMatch[1];
-                    const assetPath = resolve(SERVE_ASSETS_DIR, name);
-                    // Check the RESOLVED path, not the shape of the input. Rejecting `..` and `/`
-                    // only covers the escapes you thought of: on Windows `%5C` decodes to `\`,
-                    // which the pattern above happily accepts, and `resolve()` then treats
-                    // `C:\Users\…` as absolute and silently leaves this directory. Asking whether
-                    // the result is still inside SERVE_ASSETS_DIR is platform-independent and does
-                    // not depend on enumerating attack shapes — the same containment test the
-                    // static handler below already uses.
-                    const within = relative(SERVE_ASSETS_DIR, assetPath);
-                    if (
-                        within.startsWith("..") ||
-                        within === "" ||
-                        isAbsolute(within)
-                    ) {
-                        res.writeHead(403);
-                        res.end("forbidden");
-                        return;
-                    }
-                    try {
-                        const body = await readFile(assetPath);
-                        const ext = name.slice(name.lastIndexOf("."));
-                        res.writeHead(200, {
-                            "content-type":
-                                mimeByExt[ext] ?? "application/octet-stream",
-                            "cache-control": "no-store",
-                        });
-                        res.end(body);
-                        return;
-                    } catch {
-                        res.writeHead(404);
-                        res.end("not found: " + rel);
-                        return;
-                    }
-                }
+                // Serve-page fixtures used to be captured here and embedded the CLI
+                // viewer's hashed `/assets/serve/<hash>/…` URLs, which this server proxied
+                // out of the CLI's resources. Those specs live with the server now (see
+                // README.md), and with the extension in its own repository the CLI's
+                // resource tree is not on disk to proxy from. No fixture references those
+                // URLs any more, so the branch is gone rather than left to 404 quietly.
                 const target = normalize(resolve(root, rel));
                 if (
                     relative(root, target).startsWith("..") ||

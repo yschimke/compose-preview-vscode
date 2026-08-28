@@ -36,21 +36,14 @@ import {
 } from "../daemon/daemonProtocol";
 
 /**
- * Shared protocol fixtures live under `docs/daemon/protocol-fixtures/`. Both
- * the Kotlin daemon test suite and this TypeScript suite parse the same files
- * — adding a fixture in one ecosystem without the other is the kind of drift
- * we want to catch (PROTOCOL.md § 9). Workspace layout: vscode-extension is
- * at <repo>/vscode-extension, fixtures at <repo>/docs/daemon/protocol-fixtures.
+ * Shared protocol fixtures, vendored from yschimke/compose-ai-tools at the
+ * release `plugin-version.json` pins — see `protocol-fixtures/README.md`. Both
+ * the Kotlin daemon suite and this TypeScript suite parse the same files, so a
+ * fixture added or reshaped on one side without the other is protocol drift.
+ * Across the repo split that check is kept honest by the `Protocol Fixtures`
+ * workflow, which fails if this copy differs from the pinned upstream release.
  */
-const FIXTURES_DIR = path.resolve(
-    __dirname,
-    "..",
-    "..",
-    "..",
-    "docs",
-    "daemon",
-    "protocol-fixtures",
-);
+const FIXTURES_DIR = path.resolve(__dirname, "..", "..", "protocol-fixtures");
 
 function readFixture<T>(name: string): T {
     return JSON.parse(
@@ -261,7 +254,7 @@ describe("daemon launch descriptor", () => {
 
 /**
  * H1+H2+H3 wire shapes. No fixtures shipped under
- * `docs/daemon/protocol-fixtures/` for history methods yet (the Kotlin side
+ * `protocol-fixtures/` for history methods yet (the Kotlin side
  * keeps `entry`/`previewMetadata` as JsonElement and there's no golden
  * corpus); we instead pin the documented sidecar JSON structure from
  * HISTORY.md § "Sidecar metadata schema" so any drift on the doc surface is
@@ -369,7 +362,7 @@ describe("history protocol shapes", () => {
 
 /**
  * D1 — data product wire shapes. See `docs/daemon/DATA-PRODUCTS.md` and
- * the round-trip golden fixtures under `docs/daemon/protocol-fixtures/`.
+ * the round-trip golden fixtures under `protocol-fixtures/`.
  */
 describe("data product protocol shapes", () => {
     it('error codes match DATA-PRODUCTS.md § "Error codes"', () => {

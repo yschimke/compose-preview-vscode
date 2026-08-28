@@ -1,0 +1,18 @@
+node_modules/
+out/
+.vscode-test/
+media/webview/
+preview-harness/out/
+preview-harness/test-results/
+preview-harness/playwright-report/
+preview-harness/.last-run.json
+# Playwright writes here when run from the repo root rather than from
+# `preview-harness/`, which is what `npx playwright test -c …` does.
+test-results/
+playwright-report/
+spatial-fixtures/out/
+# Generated from a real XR render by CI; see preview-harness/fixtures/spatial-xr-real.gen.mjs.
+preview-harness/fixtures/spatial-xr-real.json
+spatial-fixtures/spatial-xr-real/
+# Written by scripts/generate-version.mjs on every compile.
+src/version.generated.ts

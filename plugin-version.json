@@ -1,0 +1,16 @@
+{
+    "_comment": [
+        "The compose-ai-tools Gradle plugin coordinate this extension is built against.",
+        "In the monorepo this was derived from .release-please-manifest.json, which only",
+        "worked because the plugin and the extension shared a version and a release train.",
+        "Split apart they do not, so the compatibility pin is explicit and reviewable here.",
+        "",
+        "`composeAiPlugin` is the version scripts/generate-version.mjs bakes into",
+        "BUNDLED_PLUGIN_VERSION — what the extension asks Gradle to apply when it injects",
+        "the plugin into a user's build. Bump it in its own PR when adopting a new plugin",
+        "release, so the adoption is a reviewable change rather than a side effect of a",
+        "release train. The PLUGIN_VERSION env var still overrides it for release builds",
+        "and for a local loop against a mavenLocal SNAPSHOT."
+    ],
+    "composeAiPlugin": "1.46.2"
+}

@@ -1,0 +1,75 @@
+# The consumer half of the cross-repo contract-drift gate.
+#
+# `protocol-fixtures/` is a vendored copy of `docs/daemon/protocol-fixtures/` in
+# yschimke/compose-ai-tools. In one repo, the fact that the Kotlin daemon suite
+# and this TypeScript suite parsed the same files WAS the drift check. Copying
+# the files across a repo boundary would have quietly downgraded that guarantee
+# to a snapshot that ages badly — the tests would keep passing against a protocol
+# the daemon stopped speaking.
+#
+# This job restores it from the consumer side: fetch the fixtures from upstream at
+# the tag matching the `composeAiPlugin` pin, and fail on any difference. The copy
+# may lag upstream `main` (this repo tracks a release, not the tip); it may never
+# disagree with the release it claims to speak to.
+#
+# What this still does NOT cover, and what compose-ai-tools#4732 keeps open: a
+# protocol change landing upstream does not fail THIS repo's CI until someone
+# bumps the pin. Catching it at the moment it lands needs the producer to run its
+# consumers' checks. This is the half that can be built from here.
+name: Protocol Fixtures
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly: catches a retagged or amended upstream release without waiting for
+    # someone to touch the pin.
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Vendored fixtures match the pinned release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compare against upstream
+        run: |
+          set -euo pipefail
+          version="$(node -e 'process.stdout.write(require("./plugin-version.json").composeAiPlugin)')"
+          tag="v${version}"
+          echo "pinned plugin: $version (upstream tag $tag)"
+
+          tmp="$(mktemp -d)"
+          git -C "$tmp" init -q .
+          git -C "$tmp" remote add origin https://github.com/yschimke/compose-ai-tools.git
+          if ! git -C "$tmp" fetch -q --depth 1 origin "refs/tags/$tag"; then
+            echo "::error::plugin-version.json pins $version but upstream has no tag $tag."
+            exit 1
+          fi
+          git -C "$tmp" checkout -q FETCH_HEAD -- docs/daemon/protocol-fixtures
+
+          # `diff -r` reports content differences, files only upstream (a fixture
+          # this repo never vendored) and files only here (one deleted upstream)
+          # in a single pass. All three are drift.
+          if ! diff -r -u "$tmp/docs/daemon/protocol-fixtures" protocol-fixtures \
+               --exclude=README.md --exclude=UPSTREAM_README.md; then
+            echo
+            echo "::error::protocol-fixtures/ does not match compose-ai-tools@$tag. Run scripts/sync-protocol-fixtures.sh and commit the result, or correct the pin in plugin-version.json."
+            exit 1
+          fi
+
+          # UPSTREAM_README.md is excluded above because it is a rename, so check it separately.
+          if ! diff -u "$tmp/docs/daemon/protocol-fixtures/README.md" protocol-fixtures/UPSTREAM_README.md; then
+            echo
+            echo "::error::protocol-fixtures/UPSTREAM_README.md is stale against compose-ai-tools@$tag. Run scripts/sync-protocol-fixtures.sh."
+            exit 1
+          fi
+
+          echo "protocol fixtures match $tag"

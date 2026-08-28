@@ -1,0 +1,84 @@
+# The consumer-side end-to-end suite: drive the extension against a real
+# third-party Compose Multiplatform project that resolves the Gradle plugin from
+# Maven Central at the coordinate `plugin-version.json` pins.
+#
+# In the monorepo there were two e2e suites — one against `:samples:*` through
+# `includeBuild("gradle-plugin")`, and this one against a published coordinate.
+# The first belongs to the producer and stays in yschimke/compose-ai-tools: it
+# tests a plugin this repo cannot build. This one belongs here, and it is now the
+# only e2e the extension has, which is the honest consequence of the split — the
+# extension is a client of a published plugin and is tested as one.
+name: E2E (external consumer)
+
+on:
+  workflow_dispatch:
+    inputs:
+      external_ref:
+        description: "Confetti git SHA / branch / tag (defaults to `main`; see scripts/setup-external-e2e.sh)"
+        required: false
+      plugin_version:
+        description: "Plugin coordinate to inject (defaults to the plugin-version.json pin)"
+        required: false
+  schedule:
+    # Nightly. The upstream consumer tracks `main`, so this suite can go red
+    # without anything in this repo changing — running it on a schedule keeps
+    # that off PRs, where it would look like the PR's fault.
+    - cron: "43 3 * * *"
+  pull_request:
+    paths:
+      - plugin-version.json
+      - scripts/setup-external-e2e.sh
+      - src/test/electron/**
+      - .github/workflows/e2e-external.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-external-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  e2e-external:
+    name: External consumer E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Prepare external workspace
+        id: workspace
+        env:
+          EXTERNAL_REPO_REF: ${{ inputs.external_ref }}
+          PLUGIN_VERSION: ${{ inputs.plugin_version }}
+          ANDROID_SDK_DIR: ${{ env.ANDROID_HOME }}
+        run: |
+          set -euo pipefail
+          workspace=$(scripts/setup-external-e2e.sh)
+          echo "dir=$workspace" >> "$GITHUB_OUTPUT"
+      - name: Run external e2e
+        env:
+          COMPOSE_PREVIEW_E2E_WORKSPACE: ${{ steps.workspace.outputs.dir }}
+          PLUGIN_VERSION: ${{ inputs.plugin_version }}
+        # No COMPOSE_PREVIEW_INIT_USE_MAVEN_LOCAL: this repo cannot publish the
+        # plugin, so the coordinate must resolve from Maven Central. That is the
+        # point of the suite post-split.
+        run: xvfb-run -a npm run test:e2e-external
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: e2e-external-logs
+          path: |
+            out/test/**/*.log
+            ${{ steps.workspace.outputs.dir }}/**/build/reports/**
+          if-no-files-found: ignore

@@ -1,0 +1,7 @@
+# Generated fixtures — keep them out of language stats and collapse them in diffs.
+spatial-fixtures/spatial-rich/scene.json linguist-generated=true
+spatial-fixtures/spatial-rich/semantics-tree.json linguist-generated=true
+spatial-fixtures/spatial-rich/panels/*.png linguist-generated=true
+preview-harness/fixtures/*.json linguist-generated=true
+# Hand-authored, despite living alongside the generated ones.
+preview-harness/fixtures/fonts-browser.json linguist-generated=false

@@ -1,0 +1,56 @@
+# The cross-repo contract-drift gate for this side of the split.
+#
+# In the monorepo the extension could not ask for a plugin version that did not
+# exist — one build produced both. Split apart, `plugin-version.json` is an
+# assertion about ANOTHER repository's published artifacts, and nothing here
+# would notice if it stopped being true. This job is what notices: it resolves
+# the pinned coordinate against Maven Central and fails if it is not there.
+#
+# This is deliberately the weak half of the gate. It catches a pin that names a
+# nonexistent release; it does NOT catch a released plugin that changed a
+# contract the extension depends on. That needs the producer side to fail on the
+# consumer's behalf — yschimke/compose-ai-tools#4732, "cross-repo contract-drift
+# gate", still open.
+name: Plugin Pin
+
+on:
+  push:
+    branches: [main]
+    paths: [plugin-version.json]
+  pull_request:
+    paths: [plugin-version.json]
+  schedule:
+    # Weekly, so a pin that was fine at merge and later got yanked surfaces
+    # without waiting for someone to touch the file.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Pinned plugin resolves
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve the pinned coordinate
+        run: |
+          set -euo pipefail
+          version="$(node -e 'process.stdout.write(require("./plugin-version.json").composeAiPlugin)')"
+          echo "pinned composeAiPlugin=$version"
+          if [[ "$version" == *-SNAPSHOT ]]; then
+            echo "::error::plugin-version.json pins a SNAPSHOT ($version). The committed pin must be a release — use the PLUGIN_VERSION env var for local SNAPSHOT loops."
+            exit 1
+          fi
+          # The Gradle plugin marker artifact, which is what the extension's
+          # injected `plugins { id(...) }` block actually resolves.
+          url="https://repo1.maven.org/maven2/ee/schimke/composeai/preview/ee.schimke.composeai.preview.gradle.plugin/${version}/ee.schimke.composeai.preview.gradle.plugin-${version}.pom"
+          echo "GET $url"
+          if ! curl --fail --silent --show-error --location --head "$url" >/dev/null; then
+            echo "::error::plugin-version.json pins ${version}, which does not resolve on Maven Central. Either the release has not landed yet or the pin is wrong."
+            exit 1
+          fi
+          echo "resolved OK"

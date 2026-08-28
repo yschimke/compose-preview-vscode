@@ -6,9 +6,10 @@
 # but the same shape works for any repo whose `gradle/libs.versions.toml`
 # pins our plugin version through `composeai-preview`.
 #
-# Why a separate suite: the in-repo `:samples:*` e2e wires the plugin via
-# `includeBuild("gradle-plugin")`, which is the perfectly-aligned dev-loop
-# path. Real consumers resolve the plugin from Maven Central and hit a much
+# Why a separate suite: yschimke/compose-ai-tools' `:samples:*` e2e wires the
+# plugin via `includeBuild("gradle-plugin")`, which is the perfectly-aligned
+# dev-loop path — and it stays in that repo, because only that repo can build
+# the plugin it tests against. This suite is the consumer-side half. Real consumers resolve the plugin from Maven Central and hit a much
 # harsher classpath (Apollo, KMP wasmJs+iOS, KMM Bridge, Firebase, ...).
 # Failures that only surface against a real consumer — stale daemon-launch
 # descriptors, classpath fingerprint mismatches, AGP/AndroidX alignment
@@ -22,10 +23,12 @@
 # Env (override defaults):
 #   EXTERNAL_REPO_URL   git URL (default: https://github.com/joreilly/Confetti.git)
 #   EXTERNAL_REPO_REF   commit SHA / tag / branch (default: pinned SHA below)
-#   PLUGIN_VERSION      plugin coordinate to inject (default: read from
-#                       `.release-please-manifest.json` and bump to
-#                       next-patch -SNAPSHOT, matching what
-#                       `publishToMavenLocal` produced)
+#   PLUGIN_VERSION      plugin coordinate to inject (default: the
+#                       `composeAiPlugin` pin in `plugin-version.json`). Set it
+#                       to a `-SNAPSHOT` to drive a locally published plugin —
+#                       that is the mavenLocal loop the monorepo used to get by
+#                       default, and it is now opt-in because this repo builds
+#                       against released plugins.
 #   ANDROID_SDK_DIR     absolute path written into `local.properties`
 #                       (default: ANDROID_HOME or /opt/android-sdk)
 #
@@ -48,21 +51,20 @@ repo_url="${EXTERNAL_REPO_URL:-$DEFAULT_REPO_URL}"
 repo_ref="${EXTERNAL_REPO_REF:-$DEFAULT_REPO_REF}"
 
 # Resolve PLUGIN_VERSION the same way `scripts/generate-version.mjs` does so
-# the catalog rewrite matches the extension's `BUNDLED_PLUGIN_VERSION`. The
-# Node helper is the single source of truth — duplicating the bump logic in
-# bash would drift.
+# the catalog rewrite matches the extension's `BUNDLED_PLUGIN_VERSION`. That
+# script is the single source of truth — duplicating the resolution here would
+# drift, and it drifted once already when the pin moved out of the monorepo's
+# release manifest into `plugin-version.json`.
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 plugin_version="${PLUGIN_VERSION:-}"
 if [[ -z "$plugin_version" ]]; then
   plugin_version="$(node -e '
     const { readFileSync } = require("node:fs");
     const { resolve } = require("node:path");
-    const env = process.env.PLUGIN_VERSION;
-    if (env) { process.stdout.write(env); process.exit(0); }
-    const m = JSON.parse(readFileSync(resolve("'"$script_dir"'", "../../.release-please-manifest.json"), "utf8"));
-    const [major, minor, patch] = String(m["."]).split(".").map((p) => parseInt(p, 10));
-    process.stdout.write(`${major}.${minor}.${patch + 1}-SNAPSHOT`);
-  ')"
+    const pin = JSON.parse(readFileSync(resolve(process.argv[1], "../plugin-version.json"), "utf8"));
+    if (!pin.composeAiPlugin) { throw new Error("no composeAiPlugin pin in plugin-version.json"); }
+    process.stdout.write(pin.composeAiPlugin);
+  ' "$script_dir")"
 fi
 
 android_sdk_dir="${ANDROID_SDK_DIR:-${ANDROID_HOME:-/opt/android-sdk}}"
