@@ -294,7 +294,7 @@
         "@vscode/codicons": "0.0.45",
         "@vscode/test-electron": "3.1.0",
         "@vscode/vsce": "3.9.2",
-        "esbuild": "0.28.1",
+        "esbuild": "0.28.2",
         "glob": "13.0.6",
         "happy-dom": "20.11.15",
         "lit": "3.3.3",
