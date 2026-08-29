@@ -17,3 +17,6 @@ spatial-fixtures/spatial-xr-real/
 # Written by scripts/generate-version.mjs on every compile.
 src/version.generated.ts
 __pycache__/
+
+# Built by `npm run package`.
+*.vsix

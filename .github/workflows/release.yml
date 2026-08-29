@@ -1,0 +1,242 @@
+# Builds the VSIX for a tag and publishes it to both extension marketplaces.
+#
+# Split out from yschimke/compose-ai-tools' release.yml, which used to build and
+# publish this extension as one asset among many (CLI, MCP server, Gradle plugin,
+# native compositor). Here the VSIX is the whole release, which changes two things:
+#
+#   1. The tag means something different. Upstream, `vX.Y.Z` was the *plugin*
+#      version and the extension was stamped with it. Here `vX.Y.Z` is the
+#      *extension* version and the plugin coordinate is an independent, committed
+#      pin. Deriving PLUGIN_VERSION from the tag — as the upstream job did — would
+#      now bake a plugin version that does not exist. See "Do not set
+#      PLUGIN_VERSION" below.
+#   2. Nothing downstream gates on this run, so a failure here is loud rather than
+#      tolerated. Upstream this job was `continue-on-error` because a marketplace
+#      outage would otherwise have stranded a Maven Central release as a permanent
+#      draft. There is no such coupling now: a red publish job is the correct and
+#      only signal, and re-running it is idempotent.
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: The `vX.Y.Z` tag to build and publish.
+        required: true
+        type: string
+    secrets:
+      # Declared optional so a missing secret reaches the `Check publishing
+      # tokens are configured` step, which names the exact secret and how to
+      # create it. `required: true` would instead fail the whole call with an
+      # opaque workflow-level error before any job runs.
+      VSCE_PAT:
+        required: false
+      OVSX_PAT:
+        required: false
+  # Re-publish an existing tag — e.g. after adding a missing secret, or after a
+  # marketplace outage. Both publish steps treat "already published" as success,
+  # so a re-run over a partially-published tag completes the half that failed.
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: The `vX.Y.Z` tag to build and publish.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag_name }}
+  cancel-in-progress: false
+
+env:
+  TAG_NAME: ${{ inputs.tag_name }}
+
+jobs:
+  build:
+    name: Build VSIX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG_NAME }}
+          persist-credentials: false
+      # Do not cache `npm` here: this job produces artifacts that get published,
+      # and a poisoned cache from an unrelated branch or run could influence the
+      # installed dependency tree (zizmor: cache-poisoning). `npm ci` on a clean
+      # runner is fast enough for a once-per-release job.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+          package-manager-cache: false
+
+      # Fail before building rather than after publishing. A VSIX whose pin names
+      # a plugin that is not on Maven Central installs fine and then fails inside
+      # the user's Gradle build, which reads as an extension bug. `Plugin Pin`
+      # already checks this on every change to plugin-version.json; repeating it
+      # here covers a pin that resolved at merge and was yanked before release.
+      - name: Pinned plugin still resolves
+        run: |
+          set -euo pipefail
+          version="$(node -e 'process.stdout.write(require("./plugin-version.json").composeAiPlugin)')"
+          url="https://repo1.maven.org/maven2/ee/schimke/composeai/preview/ee.schimke.composeai.preview.gradle.plugin/${version}/ee.schimke.composeai.preview.gradle.plugin-${version}.pom"
+          echo "pinned composeAiPlugin=$version"
+          curl --fail --silent --show-error --location --head "$url" >/dev/null \
+            || { echo "::error::plugin-version.json pins ${version}, which does not resolve on Maven Central. Refusing to ship a VSIX that injects a nonexistent plugin."; exit 1; }
+          echo "resolved OK"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Assert the tag and the committed version agree. release-please writes
+      # package.json in the same commit it tags, so they always should — a
+      # mismatch means the tag was cut by hand, and stamping over it silently
+      # would publish a VSIX whose version is not the one in the repository.
+      # `$TAG_NAME` comes from env, never templated into the script: the tag is
+      # attacker-influenceable through the dispatch input.
+      - name: Check the tag matches package.json
+        run: |
+          set -euo pipefail
+          want="${TAG_NAME#v}"
+          have="$(node -e 'process.stdout.write(require("./package.json").version)')"
+          if [ "$want" != "$have" ]; then
+            echo "::error::tag $TAG_NAME implies version $want but package.json says $have. Cut the tag from a release-please commit, or fix the tag."
+            exit 1
+          fi
+          echo "version $have"
+
+      # Do NOT set PLUGIN_VERSION. It is the *plugin* coordinate baked into
+      # BUNDLED_PLUGIN_VERSION, and it comes from plugin-version.json — not from
+      # this repository's tag, which is the extension's own version now. The
+      # upstream job set it from the tag because there they were the same number.
+      - name: Build VSIX
+        run: npm run package
+
+      # `npm run package` regenerated src/version.generated.ts from the pin.
+      # Confirm what actually got compiled, so a broken generator surfaces here
+      # rather than in a user's Gradle build.
+      - name: Verify the built plugin coordinate
+        run: |
+          set -euo pipefail
+          pinned="$(node -e 'process.stdout.write(require("./plugin-version.json").composeAiPlugin)')"
+          grep -qF "\"${pinned}\"" src/version.generated.ts \
+            || { echo "::error::src/version.generated.ts does not carry the pinned plugin version ${pinned}:"; cat src/version.generated.ts; exit 1; }
+          cat src/version.generated.ts
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vsix
+          path: "*.vsix"
+          if-no-files-found: error
+          retention-days: 7
+
+  # Attach the VSIX to the GitHub Release, then publish the release.
+  #
+  # release-please creates the release as a DRAFT (config `"draft": true`) so it
+  # is never visible without its one asset — otherwise `/releases/latest` and
+  # `latest/download/…` would point at a version whose VSIX has not uploaded yet.
+  # This job closes that window: upload, verify, un-draft. It does not gate
+  # marketplace publishing, which runs in parallel — the two distribution
+  # channels are independent and neither should block the other.
+  attach:
+    name: Attach VSIX and publish the release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: vsix
+          path: dist
+      - name: Upload the VSIX
+        run: |
+          set -euo pipefail
+          vsix="$(ls dist/*.vsix)"
+          echo "attaching $vsix to $TAG_NAME"
+          # --clobber so a re-run replaces the asset instead of failing on it.
+          gh release upload "$TAG_NAME" "$vsix" --clobber
+      - name: Publish the release (un-draft + mark latest)
+        run: |
+          set -euo pipefail
+          # Re-read from the API rather than trusting the upload step: this is
+          # the check that keeps a release from going live without its asset.
+          count="$(gh release view "$TAG_NAME" --json assets --jq '[.assets[] | select(.name | endswith(".vsix"))] | length')"
+          if [ "$count" -eq 0 ]; then
+            echo "::error::no .vsix asset on $TAG_NAME — leaving it as a draft"
+            exit 1
+          fi
+          gh release edit "$TAG_NAME" --draft=false --latest
+          echo "published $TAG_NAME"
+
+  publish:
+    name: Publish to marketplaces
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Check both tokens up front. A missing secret is the most likely failure
+      # on a fresh repository, and it is worth naming precisely rather than
+      # letting `vsce` fail with an authentication error several minutes in.
+      - name: Check publishing tokens are configured
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -euo pipefail
+          missing=0
+          [ -n "${VSCE_PAT:-}" ] || { echo "::error::VSCE_PAT is not set. Add it under Settings → Secrets and variables → Actions. It is an Azure DevOps PAT for publisher 'yuri-schimke' with the Marketplace → Manage scope."; missing=1; }
+          [ -n "${OVSX_PAT:-}" ] || { echo "::error::OVSX_PAT is not set. Add it under Settings → Secrets and variables → Actions. It is an access token from open-vsx.org for the 'yuri-schimke' namespace."; missing=1; }
+          [ "$missing" -eq 0 ] || exit 1
+          echo "both tokens present"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: vsix
+          path: dist
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+          package-manager-cache: false
+      - name: Publish to VS Code Marketplace
+        env:
+          # vsce reads VSCE_PAT from env — keeps the token out of argv and logs.
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          set -o pipefail
+          vsix=$(ls dist/*.vsix)
+          echo "Publishing $vsix to VS Code Marketplace"
+          if ! output=$(npx --yes @vscode/vsce@^3 publish --packagePath "$vsix" 2>&1); then
+            printf '%s\n' "$output"
+            if printf '%s' "$output" | grep -qiE "already.*published|already exists"; then
+              echo "Version already on VS Code Marketplace — treating as success."
+              exit 0
+            fi
+            exit 1
+          fi
+          printf '%s\n' "$output"
+      - name: Publish to Open VSX
+        # Run even if the Marketplace step failed — the two registries are
+        # independent, so a bad PAT or an outage on one must not silently skip
+        # the other. The job still ends red if either failed.
+        if: ${{ !cancelled() }}
+        env:
+          # ovsx reads OVSX_PAT from env.
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -o pipefail
+          vsix=$(ls dist/*.vsix)
+          echo "Publishing $vsix to Open VSX"
+          if ! output=$(npx --yes ovsx@^0.10 publish "$vsix" 2>&1); then
+            printf '%s\n' "$output"
+            if printf '%s' "$output" | grep -qiE "already.*published|already exists"; then
+              echo "Version already on Open VSX — treating as success."
+              exit 0
+            fi
+            exit 1
+          fi
+          printf '%s\n' "$output"
