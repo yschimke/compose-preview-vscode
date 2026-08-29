@@ -46,6 +46,15 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Cut the release ONLY. release-please otherwise computes the next
+          # candidate release PR in this same invocation — and at that moment our
+          # release is a tagless draft (config `"draft": true`, and a draft
+          # creates no tag ref). That half therefore reads the *previous*
+          # release as its baseline and re-proposes the version being released,
+          # opening a phantom PR whose own compare link reads `vX.Y.Z...vX.Y.Z`
+          # (#5). `update-release-pr` runs the PR half afterwards, once the tag
+          # exists and the release is published.
+          skip-github-pull-request: true
 
       # A *draft* GitHub Release does not create its git tag — GitHub writes the
       # tag ref only when the release is published. `release.yml` checks out
@@ -88,3 +97,33 @@ jobs:
     secrets:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+  # The PR half of release-please, split out of the job above so it never runs
+  # against a half-published release.
+  #
+  # Runs in two situations, which the `if` spells out:
+  #   - an ordinary push that cut no release (`release_created != 'true'`) — the
+  #     normal case, where this opens or updates the pending release PR; and
+  #   - straight after a successful release, to open the *next* one against a
+  #     baseline that now includes the tag just published.
+  #
+  # It deliberately does NOT run when a release was cut but publishing failed:
+  # the baseline would still be stale and it would re-propose the version that
+  # is mid-release — the exact phantom this split exists to prevent.
+  update-release-pr:
+    name: Update the release PR
+    needs: [release-please, release]
+    if: >-
+      ${{ !cancelled()
+      && (needs.release-please.outputs.release_created != 'true'
+      || needs.release.result == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # update the release branch
+      pull-requests: write # open/update the release PR
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-release: true
