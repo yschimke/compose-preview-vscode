@@ -1,6 +1,43 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>yschimke/renovate-config"
+    "github>yschimke/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "description": "Playwright: never bump unattended, and never bump one half alone. `playwright` and `@playwright/test` are held at the same version on purpose — Playwright bundles its own Chromium, and a different Chromium rasterises text and antialiasing differently. Every baseline on the `preview/main` branch was captured with this one, so a bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopting a new Playwright means republishing baselines in the same change, which a bot cannot do — hence `automerge: false`, overriding the preset's auto-land for minor/patch. Grouped so the two versions can never desync; dashboard-gated so the upgrade is a decision rather than a Monday morning surprise.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "playwright",
+        "@playwright/test"
+      ],
+      "groupName": "playwright",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "@types/vscode declares the minimum VS Code version this extension supports, and it has to stay in step with `engines.vscode` in package.json — which Renovate does not update. Bumping the types alone silently lets code compile against APIs older editors do not have; bumping both drops users on older VS Code. Either way it is a support-policy decision, so it waits on the dashboard and never auto-lands.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepNames": [
+        "@types/vscode"
+      ],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "three and @types/three must move together: the typings track the runtime's version line exactly, and a mismatch fails the webview build rather than degrading gracefully.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "three",
+        "@types/three"
+      ],
+      "groupName": "three"
+    }
   ]
 }
