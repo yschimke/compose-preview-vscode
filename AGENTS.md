@@ -211,29 +211,34 @@ That is the recovery path for a missing secret or a marketplace outage.
 
 ## Dependency updates
 
-Two bots, split the same way as upstream `compose-ai-tools`, so all three
-repositories behave identically:
+Renovate, configured in `renovate.json` at the repo root, extending the shared
+preset [`yschimke/renovate-config`](https://github.com/yschimke/renovate-config).
+The preset owns the schedule, the grouping-by-release-train philosophy, the
+kotlinx `-compat` filter, `rangeStrategy: pin`, and automerge of minor/patch once
+CI is green. Repo-specific rules go in this repo's own `packageRules`, which are
+appended after the preset and therefore override it.
 
-- **Dependabot** (`.github/dependabot.yml`) owns the SHA-pinned GitHub Actions.
-  It bumps the SHA *and* the trailing `# vX.Y.Z` comment, which is why pinning by
-  commit stays reviewable.
-- **Renovate** (`.github/renovate.json`) owns npm, with
-  `"github-actions": {"enabled": false}` so the two never fight over the same
-  files.
+**One config file, at the root.** Renovate refuses to run at all if it finds more
+than one of `renovate.json`, `.github/renovate.json`, `.renovaterc` and friends —
+it fails with "Found multiple config file names" rather than picking one. Do not
+add a second one.
 
-Both run Monday mornings and hold a new release for 7 days (14 for a major)
-before proposing it, so a compromised-then-pulled package does not auto-land.
+**Renovate also handles GitHub Actions** (the preset has a `github-actions`
+group), so there is deliberately no `dependabot.yml` here. Upstream
+`compose-ai-tools` splits the work the other way — Dependabot for actions,
+Renovate with `github-actions` disabled — because it predates the preset. Do not
+copy its `dependabot.yml` across: two bots on the same files means duplicate PRs.
 
 Three things do not update on their own:
 
 | Held | Why |
 | --- | --- |
-| `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync. |
+| `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync, and `automerge: false` because a bot cannot do the baseline half. |
 | `@types/vscode` | Has to stay in step with `engines.vscode`, which Renovate does not touch. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
 | `plugin-version.json` | Not a package manifest — no bot sees it. The compatibility pin is bumped by hand in its own PR, as [the rule at the top of this file](#the-one-rule-that-is-different-here) requires. |
 
-The first two are gated behind Renovate's dependency dashboard rather than
-disabled, so the upgrade stays *visible* and is taken deliberately.
+The first two are dashboard-gated rather than disabled, so the upgrade stays
+*visible* and is taken deliberately.
 
 ## Conventional commits
 
