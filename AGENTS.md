@@ -142,6 +142,16 @@ resolution error in a user's build. The workflow instead lets
 `scripts/generate-version.mjs` read the pin, and then asserts that the compiled
 `src/version.generated.ts` carries it.
 
+### Tags are `vX.Y.Z`
+
+`include-component-in-tag: false` in `release-please-config.json` is load-bearing,
+not tidying. release-please derives a *component* from `package-name`, and with
+the default (`true`) it would tag `compose-preview-v1.47.0`. `release.yml` parses
+the version as `${TAG_NAME#v}`, the `Plugin Pin` and install docs assume
+`vX.Y.Z`, and the upstream repo uses the same shape. Removing the flag does not
+produce a wrong version — the tag/`package.json` guard fails the release
+outright — but it does block it.
+
 ### Secrets
 
 Two repository secrets, both required to publish:
