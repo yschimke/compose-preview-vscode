@@ -16,3 +16,27 @@ package-lock.json
 # Exclude test output even though out/ is kept for runtime
 out/test/**
 out/**/*.test.js
+
+# Repository machinery, not extension payload. Without these the published
+# VSIX carries ~1 MB of CI workflows, agent docs, build scripts and test
+# fixtures — none of which the extension loads at runtime.
+.github/**
+scripts/**
+docs/**
+protocol-fixtures/**
+spatial-fixtures/**
+AGENTS.md
+CLAUDE.md
+release-please-config.json
+.release-please-manifest.json
+# Read by scripts/generate-version.mjs at COMPILE time and baked into
+# src/version.generated.ts. Nothing reads it at runtime.
+plugin-version.json
+
+# The Playwright harness is test-only with one exception: the
+# `composePreview.openSpatialFixture` dev command reads
+# preview-harness/fixtures/spatial-scene/ from `context.extensionUri`, so that
+# one fixture (and its textures) must ship. Re-including after the exclude is
+# how .vscodeignore expresses this — order matters, keep the `!` lines last.
+preview-harness/**
+!preview-harness/fixtures/spatial-scene/**

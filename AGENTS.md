@@ -106,6 +106,76 @@ Maven Central**, which is the only path this repo can honestly test. It runs nig
 rather than on every PR, because it tracks upstream `main` and can go red without
 anything here changing.
 
+## Releasing
+
+Merging the `chore(main): release X.Y.Z` pull request is the entire release.
+release-please keeps that PR up to date from conventional-commit history; merging
+it cuts the tag, creates the GitHub Release, then `release.yml` builds the VSIX,
+attaches it, and publishes to both marketplaces.
+
+**Releases are deliberately infrequent.** The release PR accumulates and sits open
+until someone decides to ship — merging to `main` does not release. Nothing forces
+a release, and there is no schedule.
+
+### The version is the extension's own
+
+This is the thing most likely to trip you up if you know the monorepo. There,
+`vX.Y.Z` was the *plugin* version and the extension was stamped with it, so the
+two numbers were the same by construction. Here they are unrelated:
+
+| Number | Lives in | Means |
+| --- | --- | --- |
+| Extension version | `package.json`, managed by release-please | What users install |
+| Plugin coordinate | `plugin-version.json`, hand-bumped | What the extension injects into a Gradle build |
+
+`1.46.2` is seeded in `.release-please-manifest.json` only so the first
+independent release is strictly greater than the last one the monorepo published
+(the marketplaces require a strictly increasing version). **They diverge from
+there and are not expected to line up again.** An extension release does not
+imply a plugin release, or the reverse.
+
+The concrete trap: **`release.yml` must never set `PLUGIN_VERSION` from the tag.**
+The upstream job did, correctly, because the tag *was* the plugin version. Doing
+it here would bake a plugin coordinate that does not exist into
+`BUNDLED_PLUGIN_VERSION`, and the failure would surface as an unexplained Gradle
+resolution error in a user's build. The workflow instead lets
+`scripts/generate-version.mjs` read the pin, and then asserts that the compiled
+`src/version.generated.ts` carries it.
+
+### Secrets
+
+Two repository secrets, both required to publish:
+
+| Secret | What it is |
+| --- | --- |
+| `VSCE_PAT` | Azure DevOps PAT for publisher `yuri-schimke`, scope **Marketplace → Manage** |
+| `OVSX_PAT` | Access token from open-vsx.org for the `yuri-schimke` namespace |
+
+They cannot be copied from another repository — GitHub never exposes a secret's
+value through the API, and this account has no org-level shared secrets. Set them
+under **Settings → Secrets and variables → Actions**. If either is missing the
+publish job fails immediately with a step that names it, rather than skipping
+quietly.
+
+### What the release checks before it ships
+
+- **The pinned plugin still resolves on Maven Central.** `Plugin Pin` checks this
+  when `plugin-version.json` changes; the release re-checks it, which catches a
+  pin that was fine at merge and got yanked before shipping.
+- **The tag matches `package.json`.** A mismatch means the tag was cut by hand;
+  stamping over it would publish a VSIX whose version is not the one in the
+  repository.
+- **The built `src/version.generated.ts` carries the pinned plugin version**, so a
+  broken generator fails the release rather than a user's build.
+- **The GitHub Release stays a draft until its VSIX is attached**, so
+  `/releases/latest` never points at a version whose asset has not uploaded.
+
+Marketplace publishing runs in parallel with attaching the asset — the two
+distribution channels are independent, and neither blocks the other. Both publish
+steps treat "already published" as success, so re-running `release.yml` via
+`workflow_dispatch` over a partly-published tag completes the half that failed.
+That is the recovery path for a missing secret or a marketplace outage.
+
 ## Conventional commits
 
 Commit subjects and PR titles use conventional-commit prefixes (`fix:`, `feat:`,

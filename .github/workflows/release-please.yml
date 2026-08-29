@@ -1,0 +1,90 @@
+# Keeps a "chore(main): release X.Y.Z" pull request up to date from
+# conventional-commit history. Merging that PR is the whole release: it cuts the
+# tag, creates the GitHub Release, and starts `release.yml`, which builds the
+# VSIX and publishes it. No manual tag push, no dispatch step.
+#
+# Releases here are deliberately infrequent. The release PR accumulates changes
+# and simply sits open until someone decides to ship; nothing forces a release on
+# merge to main. That is the point of the split — this extension no longer rides
+# the compose-ai-tools release train, and its version is its own. `1.46.2` is
+# seeded in `.release-please-manifest.json` only so the first independent release
+# is strictly greater than the last one the monorepo published; the numbers
+# diverge from there and are not expected to line up with the plugin again.
+name: Release PR
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Ordinary main pushes share one pending slot so release-please PR updates
+  # coalesce during a merge burst. A merged release PR must not share that slot:
+  # if it is still pending, the next main push could replace it before the
+  # publish jobs start.
+  # Quoted: the `chore(main): release ` literal contains `: `, which YAML would
+  # otherwise read as a nested mapping and reject the whole workflow at startup.
+  group: "release-please-${{ github.ref }}-${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(main): release ') && github.sha || 'updates' }}"
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create tags + GitHub Releases
+      pull-requests: write # open/update the release PR
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # A *draft* GitHub Release does not create its git tag — GitHub writes the
+      # tag ref only when the release is published. `release.yml` checks out
+      # `ref: <tag>`, so the tag has to exist before it runs. Idempotent: skips
+      # if the ref is already there (a re-run, or a future non-draft release).
+      #
+      # `!cancelled()` rather than the default success-only gate is deliberate:
+      # once the action reports `release_created=true`, a later failure inside it
+      # must not skip tag creation, or the manifest names a version with no tag
+      # and every later run re-lists old history.
+      - name: Ensure the release tag exists for the draft
+        if: ${{ !cancelled() && steps.rp.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.rp.outputs.tag_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/{owner}/{repo}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag ${TAG} already exists"
+            exit 0
+          fi
+          gh api --method POST "repos/{owner}/{repo}/git/refs" \
+            -f "ref=refs/tags/${TAG}" -f "sha=${SHA}" >/dev/null
+          echo "created tag ${TAG} at ${SHA}"
+
+  # Build the VSIX, attach it to the drafted release, publish both. Chaining
+  # within one run also sidesteps the GITHUB_TOKEN-doesn't-trigger-workflows
+  # limitation — a `push` of the tag from this job would start nothing.
+  release:
+    name: Release
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+    with:
+      tag_name: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
