@@ -14,7 +14,7 @@
     },
     "homepage": "https://github.com/yschimke/compose-preview-vscode#readme",
     "engines": {
-        "vscode": "^1.85.0"
+        "vscode": "1.135.0"
     },
     "icon": "media/icon.png",
     "galleryBanner": {
@@ -285,28 +285,28 @@
         "harness:contract": "node esbuild.webview.mjs && playwright test -c preview-harness/playwright.config.mjs contract"
     },
     "devDependencies": {
-        "@happy-dom/global-registrator": "^20.9.0",
-        "@playwright/test": "~1.62.0",
-        "@types/mocha": "^10.0.0",
-        "@types/node": "^24.0.0",
-        "@types/three": "^0.185.0",
-        "@types/vscode": "^1.85.0",
-        "@vscode/codicons": "^0.0.45",
-        "@vscode/test-electron": "^3.0.0",
-        "@vscode/vsce": "^3.0.0",
-        "esbuild": "^0.28.1",
-        "glob": "^13.0.0",
-        "happy-dom": "^20.9.0",
-        "lit": "^3.2.0",
-        "mocha": "^11.0.0",
-        "playwright": "~1.62.0",
-        "prettier": "^3.8.3",
-        "typescript": "^7.0.0"
+        "@happy-dom/global-registrator": "20.11.1",
+        "@playwright/test": "1.62.1",
+        "@types/mocha": "10.0.10",
+        "@types/node": "24.13.3",
+        "@types/three": "0.185.4",
+        "@types/vscode": "1.116.0",
+        "@vscode/codicons": "0.0.45",
+        "@vscode/test-electron": "3.1.0",
+        "@vscode/vsce": "3.9.2",
+        "esbuild": "0.28.1",
+        "glob": "13.0.6",
+        "happy-dom": "20.11.1",
+        "lit": "3.3.3",
+        "mocha": "11.8.0",
+        "playwright": "1.62.1",
+        "prettier": "3.9.6",
+        "typescript": "7.0.2"
     },
     "overrides": {
-        "serialize-javascript": "^7.0.7"
+        "serialize-javascript": "7.0.7"
     },
     "dependencies": {
-        "three": "^0.185.0"
+        "three": "0.185.1"
     }
 }
