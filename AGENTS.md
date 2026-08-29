@@ -186,6 +186,32 @@ steps treat "already published" as success, so re-running `release.yml` via
 `workflow_dispatch` over a partly-published tag completes the half that failed.
 That is the recovery path for a missing secret or a marketplace outage.
 
+## Dependency updates
+
+Two bots, split the same way as upstream `compose-ai-tools`, so all three
+repositories behave identically:
+
+- **Dependabot** (`.github/dependabot.yml`) owns the SHA-pinned GitHub Actions.
+  It bumps the SHA *and* the trailing `# vX.Y.Z` comment, which is why pinning by
+  commit stays reviewable.
+- **Renovate** (`.github/renovate.json`) owns npm, with
+  `"github-actions": {"enabled": false}` so the two never fight over the same
+  files.
+
+Both run Monday mornings and hold a new release for 7 days (14 for a major)
+before proposing it, so a compromised-then-pulled package does not auto-land.
+
+Three things do not update on their own:
+
+| Held | Why |
+| --- | --- |
+| `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync. |
+| `@types/vscode` | Has to stay in step with `engines.vscode`, which Renovate does not touch. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
+| `plugin-version.json` | Not a package manifest — no bot sees it. The compatibility pin is bumped by hand in its own PR, as [the rule at the top of this file](#the-one-rule-that-is-different-here) requires. |
+
+The first two are gated behind Renovate's dependency dashboard rather than
+disabled, so the upgrade stays *visible* and is taken deliberately.
+
 ## Conventional commits
 
 Commit subjects and PR titles use conventional-commit prefixes (`fix:`, `feat:`,
