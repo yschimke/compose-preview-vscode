@@ -290,7 +290,7 @@
         "@types/mocha": "10.0.10",
         "@types/node": "24.13.3",
         "@types/three": "0.185.4",
-        "@types/vscode": "1.116.0",
+        "@types/vscode": "1.134.0",
         "@vscode/codicons": "0.0.45",
         "@vscode/test-electron": "3.1.0",
         "@vscode/vsce": "3.9.2",
