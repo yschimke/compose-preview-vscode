@@ -142,6 +142,29 @@ resolution error in a user's build. The workflow instead lets
 `scripts/generate-version.mjs` read the pin, and then asserts that the compiled
 `src/version.generated.ts` carries it.
 
+### release-please runs in two halves, deliberately
+
+`release-please.yml` invokes the action twice: once to cut the release
+(`skip-github-pull-request: true`) and once afterwards to open or update the
+release PR (`skip-github-release: true`). Do not collapse them.
+
+A single invocation does both, and the PR half then runs while the release it
+just cut is still a **tagless draft** — `"draft": true` in the config, and a draft
+release creates no tag ref. With no tag to read, that half falls back to the
+previous release as its baseline and re-proposes the version being released,
+opening a phantom PR whose compare link reads `vX.Y.Z...vX.Y.Z`. That is
+[#5](https://github.com/yschimke/compose-preview-vscode/pull/5), which happened
+on the very first release.
+
+`update-release-pr` also skips when a release was cut but publishing failed —
+same reason: the baseline is still stale.
+
+**Known gap:** an ordinary push merged during a release holds a separate
+concurrency slot, so it can still run the PR half against a stale baseline.
+Upstream guards this with `.github/scripts/release-pr-race-guard.sh`; this repo
+does not, on the grounds that it releases rarely and merge bursts are unlikely.
+If a duplicate release PR ever shows up, that is the cause — port the guard.
+
 ### Tags are `vX.Y.Z`
 
 `include-component-in-tag: false` in `release-please-config.json` is load-bearing,
