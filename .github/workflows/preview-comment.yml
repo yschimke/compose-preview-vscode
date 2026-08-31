@@ -5,20 +5,16 @@ name: Preview Comment
 # image URLs stay resolvable after merge.
 
 on:
+  # NO `paths:` filter here, deliberately. `Compare preview captures` is a REQUIRED
+  # status check in the `Protect main` ruleset, and a required check that never runs
+  # never reports — GitHub then blocks the pull request forever rather than treating
+  # it as skipped. That is not hypothetical: #23 bumped `plugin-version.json` only,
+  # this workflow never fired, and the PR sat `blocked` with every check it did run
+  # green and auto-merge armed.
+  #
+  # So the job always starts, and the path filter moved INTO it (see `scope` below).
+  # An unrelated PR still costs one short job rather than the whole Chromium sweep.
   pull_request:
-    paths:
-      - 'src/**'
-      - 'media/**'
-      - 'preview-harness/**'
-      - 'spatial-fixtures/**'
-      - 'esbuild.webview.mjs'
-      - 'tsconfig.webview.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/actions/preview-baselines/**'
-      - '.github/actions/preview-comment/**'
-      - '.github/actions/lib/preview-diff.py'
-      - '.github/workflows/preview-comment.yml'
   # Manual re-run, for when the `pull_request` trigger is missed and the sticky comment
   # is left describing an older head. `pr` is required in practice: a dispatch carries no
   # `pull_request` event, so without it the comment step has no number to post to and
@@ -50,7 +46,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The scope check below diffs against the PR base, which a shallow clone lacks.
+          fetch-depth: 0
+      # The `paths:` filter this replaces, evaluated in the job so the check still
+      # reports on a PR that touches none of these. A manual `workflow_dispatch` run is
+      # always in scope — it exists to re-drive a diff by hand.
+      - name: Decide whether this PR can move the captures
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != 'pull_request' ]; then
+            echo "in-scope=true" >> "$GITHUB_OUTPUT"
+            echo "manual run — always in scope"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          if printf '%s\n' "$changed" | grep -Eq \
+            '^(src/|media/|preview-harness/|spatial-fixtures/|esbuild\.webview\.mjs$|tsconfig\.webview\.json$|package\.json$|package-lock\.json$|\.github/actions/preview-baselines/|\.github/actions/preview-comment/|\.github/actions/lib/preview-diff\.py$|\.github/workflows/preview-comment\.yml$)'
+          then
+            echo "in-scope=true" >> "$GITHUB_OUTPUT"
+            echo "capture surfaces touched — running the diff"
+          else
+            echo "in-scope=false" >> "$GITHUB_OUTPUT"
+            echo "no capture surface touched — reporting green without rendering"
+          fi
       - uses: ./.github/actions/preview-comment
+        if: steps.scope.outputs.in-scope == 'true'
         with:
           # Empty on a `pull_request` run, where the action falls back to the event's own
           # PR number.
