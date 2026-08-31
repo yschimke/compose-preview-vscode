@@ -12,5 +12,5 @@
         "release train. The PLUGIN_VERSION env var still overrides it for release builds",
         "and for a local loop against a mavenLocal SNAPSHOT."
     ],
-    "composeAiPlugin": "1.46.2"
+    "composeAiPlugin": "1.56.2"
 }
