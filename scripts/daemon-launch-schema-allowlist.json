@@ -1,0 +1,15 @@
+{
+    "_comment": [
+        "Every TypeScript declaration of the daemon-launch descriptor schema version.",
+        "The checker scans this repository for unregistered declarations, so adding a mirror",
+        "requires an explicit decision here. The producer-side registry and wire fingerprint",
+        "remain in yschimke/compose-ai-tools; this list owns only this repository's tree."
+    ],
+    "schemaVersionSites": [
+        {
+            "file": "src/daemon/daemonProtocol.ts",
+            "symbol": "DAEMON_DESCRIPTOR_SCHEMA_VERSION",
+            "why": "The extension rejects daemon-launch.json descriptors whose version differs from this reader constant."
+        }
+    ]
+}

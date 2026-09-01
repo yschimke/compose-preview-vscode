@@ -86,6 +86,13 @@ jobs:
             || { echo "::error::plugin-version.json pins ${version}, which does not resolve on Maven Central. Refusing to ship a VSIX that injects a nonexistent plugin."; exit 1; }
           echo "resolved OK"
 
+      # The extension gates daemon-launch.json at runtime. Check the schema metadata from the
+      # exact plugin release this VSIX will inject, rather than comparing two repositories' default
+      # branches. This repeats CI deliberately: a release must not ship if the pinned metadata can
+      # no longer be resolved or the reader constant disagrees with it.
+      - name: Daemon-launch schema matches the pinned plugin
+        run: node scripts/check-daemon-launch-schema.mjs
+
       - name: Install dependencies
         run: npm ci
 
