@@ -6,11 +6,10 @@
 # would notice if it stopped being true. This job is what notices: it resolves
 # the pinned coordinate against Maven Central and fails if it is not there.
 #
-# This is deliberately the weak half of the gate. It catches a pin that names a
-# nonexistent release; it does NOT catch a released plugin that changed a
-# contract the extension depends on. That needs the producer side to fail on the
-# consumer's behalf — yschimke/compose-ai-tools#4732, "cross-repo contract-drift
-# gate", still open.
+# The daemon-launch schema check below is the consumer-owned compatibility half:
+# it compares this repository's reader constant with machine-readable metadata
+# from the exact release the pin names. The producer independently fingerprints
+# its emitted wire shape, so a shape change cannot retain the old schema version.
 name: Plugin Pin
 
 on:
@@ -54,3 +53,9 @@ jobs:
             exit 1
           fi
           echo "resolved OK"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - name: Check daemon-launch schema metadata
+        run: node scripts/check-daemon-launch-schema.mjs

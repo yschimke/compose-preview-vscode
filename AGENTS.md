@@ -195,6 +195,10 @@ quietly.
 - **The pinned plugin still resolves on Maven Central.** `Plugin Pin` checks this
   when `plugin-version.json` changes; the release re-checks it, which catches a
   pin that was fine at merge and got yanked before shipping.
+- **The daemon-launch reader matches the pinned plugin's schema.** The extension
+  checks `DAEMON_DESCRIPTOR_SCHEMA_VERSION` against the machine-readable schema
+  metadata published with that exact `daemon-launch-builder` release, and scans
+  its own TypeScript tree for unregistered copies of the version constant.
 - **The tag matches `package.json`.** A mismatch means the tag was cut by hand;
   stamping over it would publish a VSIX whose version is not the one in the
   repository.

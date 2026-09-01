@@ -57,4 +57,6 @@ export const BUNDLED_PLUGIN_VERSION = "${resolved}";
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, body);
-console.log(`generate-version: BUNDLED_PLUGIN_VERSION=${resolved} → ${outPath}`);
+console.log(
+    `generate-version: BUNDLED_PLUGIN_VERSION=${resolved} → ${outPath}`,
+);
