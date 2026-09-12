@@ -286,7 +286,7 @@
         "harness:contract": "node esbuild.webview.mjs && playwright test -c preview-harness/playwright.config.mjs contract"
     },
     "devDependencies": {
-        "@happy-dom/global-registrator": "20.12.0",
+        "@happy-dom/global-registrator": "20.14.5",
         "@playwright/test": "1.62.1",
         "@types/mocha": "10.0.10",
         "@types/node": "24.13.3",
@@ -297,7 +297,7 @@
         "@vscode/vsce": "3.9.2",
         "esbuild": "0.28.2",
         "glob": "13.0.6",
-        "happy-dom": "20.12.0",
+        "happy-dom": "20.14.5",
         "lit": "3.3.3",
         "mocha": "11.8.0",
         "playwright": "1.62.1",
