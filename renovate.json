@@ -29,6 +29,19 @@
       "automerge": false
     },
     {
+      "description": "`engines.vscode` is a RANGE, not a version to pin. The preset's `rangeStrategy: pin` is right for dependencies and wrong here: VS Code reads this field as a semver range against the running editor, so a pinned `1.135.0` means `only 1.135.0` and every later editor refuses to load the extension — which is exactly what #11 did, and what surfaced the day stable moved to 1.138.0. Disabled rather than re-ranged, because which floor this extension supports is the same support-policy decision as `@types/vscode` above, made by a human in the same change.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "engines"
+      ],
+      "matchDepNames": [
+        "vscode"
+      ],
+      "enabled": false
+    },
+    {
       "description": "three and @types/three must move together: the typings track the runtime's version line exactly, and a mismatch fails the webview build rather than degrading gracefully.",
       "matchManagers": [
         "npm"

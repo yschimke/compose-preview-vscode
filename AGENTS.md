@@ -270,7 +270,8 @@ Three things do not update on their own:
 | Held | Why |
 | --- | --- |
 | `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync, and `automerge: false` because a bot cannot do the baseline half. |
-| `@types/vscode` | Has to stay in step with `engines.vscode`, which Renovate does not touch. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
+| `@types/vscode` | Has to stay in step with `engines.vscode`. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
+| `engines.vscode` | Renovate is switched **off** for it, not merely gated. It is a semver *range* matched against the running editor, so the preset's `rangeStrategy: pin` produced a bare `1.135.0` in [#11](https://github.com/yschimke/compose-preview-vscode/pull/11) — which VS Code reads as *only* 1.135.0, and every later editor then refuses to load the extension ("Extension is not compatible with Code 1.138.0"). It broke both Electron suites the day stable moved past the pin, on `main` as much as on any branch. Keep the caret; `src/test/extensionManifest.test.ts` fails if it is ever pinned again. |
 | `plugin-version.json` | Not a package manifest — no bot sees it. The compatibility pin is bumped by hand in its own PR, as [the rule at the top of this file](#the-one-rule-that-is-different-here) requires, and `composePreviewDaemon` follows from it rather than moving on its own. |
 
 The first two are dashboard-gated rather than disabled, so the upgrade stays

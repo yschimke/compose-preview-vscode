@@ -14,7 +14,7 @@
     },
     "homepage": "https://github.com/yschimke/compose-preview-vscode#readme",
     "engines": {
-        "vscode": "1.135.0"
+        "vscode": "^1.135.0"
     },
     "icon": "media/icon.png",
     "galleryBanner": {

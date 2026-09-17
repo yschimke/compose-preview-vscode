@@ -47,6 +47,8 @@ const browser = await chromium.launch({
     ],
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+page.setDefaultTimeout(timeout);
+page.setDefaultNavigationTimeout(timeout);
 
 const consoleErrors = [];
 const pageErrors = [];
@@ -112,7 +114,7 @@ try {
     stage("screenshot");
 
     await mkdir(captures, { recursive: true });
-    const shot = await page.screenshot();
+    const shot = await page.screenshot({ timeout: 60_000, animations: "disabled" });
     await writeFile(resolve(captures, `${cspName}.png`), shot);
     painted = paintStats(decodePng(shot));
     stage(`painted ${painted.distinctColours} colours`);
