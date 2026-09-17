@@ -93,6 +93,32 @@ reads as 360 colours; blank page reads as 1 colour and 0.0000 non-white; baselin
 CSP blocks a mismatched nonce). So a `PAINTS: no` from `paint.mjs` is about the
 editor, not the harness.
 
+### The control does not paint in a software-GL container
+
+Run: `paint.mjs --csp=none` — **no CSP at all**, so nothing about policy is in play.
+
+| | |
+| --- | --- |
+| Environment | 4 vCPU container, no GPU, ANGLE/SwiftShader software rasterisation, Chromium 1194 |
+| Result | no `#composeApp canvas` after **15 minutes**, at which point the run was killed |
+| Meanwhile | a Chromium renderer process sat at ~100% CPU for the whole run |
+| Playwright's own selector timeout (7 min) | never serviced — consistent with a renderer main thread that never yields |
+
+So the editor's module **is** executing; it is not erroring out, and nothing is
+blocked. It just never reaches a first frame here.
+
+**This does not answer the spike's question, and the CSP variants were therefore
+not run.** A control that cannot paint makes any CSP result meaningless: "it did
+not paint under the widened CSP" would be indistinguishable from "it does not
+paint in this container". Running them anyway would have produced a confident
+wrong answer, which is worse than no answer.
+
+The suspicion worth testing first is the obvious one: a 66 MB WasmGC module plus
+Skiko against **software** WebGL on 4 cores. Whoever picks this up should run
+`paint.mjs` on a machine with hardware GL before concluding anything about
+Kotlin/Wasm in a webview — and note that a VS Code webview on a real desktop has
+exactly that, which is the case the handover note actually cares about.
+
 ### What this environment cannot answer
 
 The **real** VS Code webview half needs a VS Code binary, and
