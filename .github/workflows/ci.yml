@@ -33,6 +33,8 @@ jobs:
           cache: npm
       - name: Check daemon-launch schema against the pinned plugin
         run: node scripts/check-daemon-launch-schema.mjs
+      - name: Check the daemon pin against the pinned plugin's POM
+        run: node scripts/check-daemon-pin.mjs
       - name: Install dependencies
         run: npm ci
       - name: Check formatting

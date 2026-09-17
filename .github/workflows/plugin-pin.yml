@@ -6,6 +6,11 @@
 # would notice if it stopped being true. This job is what notices: it resolves
 # the pinned coordinate against Maven Central and fails if it is not there.
 #
+# It also checks the second pin in that file. compose-ai-tools extracted the daemon
+# into yschimke/compose-preview-daemon on its own 3.x train, so "which daemon does
+# this plugin speak to" stopped being answerable from the plugin's version alone;
+# `composePreviewDaemon` records it and this job proves it still matches.
+#
 # The daemon-launch schema check below is the consumer-owned compatibility half:
 # it compares this repository's reader constant with machine-readable metadata
 # from the exact release the pin names. The producer independently fingerprints
@@ -59,3 +64,9 @@ jobs:
           package-manager-cache: false
       - name: Check daemon-launch schema metadata
         run: node scripts/check-daemon-launch-schema.mjs
+      # `composePreviewDaemon` is derived from the plugin pin, not chosen beside it:
+      # it has to be whatever daemon release the pinned plugin resolves. This reads
+      # that back off Maven Central, so a `composeAiPlugin` bump cannot leave the
+      # fixture source pointing at the wrong daemon tag.
+      - name: Check the daemon pin against the plugin's published POM
+        run: node scripts/check-daemon-pin.mjs

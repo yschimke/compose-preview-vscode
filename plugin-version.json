@@ -10,7 +10,22 @@
         "the plugin into a user's build. Bump it in its own PR when adopting a new plugin",
         "release, so the adoption is a reviewable change rather than a side effect of a",
         "release train. The PLUGIN_VERSION env var still overrides it for release builds",
-        "and for a local loop against a mavenLocal SNAPSHOT."
+        "and for a local loop against a mavenLocal SNAPSHOT.",
+        "",
+        "`composePreviewDaemon` is NOT a second choice — it is the daemon release that the",
+        "plugin named above resolves, written down so this repository can fetch from the",
+        "right place. Since compose-ai-tools extracted the daemon into",
+        "yschimke/compose-preview-daemon (its own 3.x train), the protocol fixtures and the",
+        "daemon wire live there, at a tag that has nothing to do with the plugin's version.",
+        "Every compose-ai-tools POM imports `compose-preview-daemon-bom` at this version, so",
+        "it is a published fact rather than a judgement: scripts/check-daemon-pin.mjs reads",
+        "it back out of `render-host-<composeAiPlugin>.pom` on Maven Central and fails if",
+        "the two have skewed. Bump it only to whatever that POM says.",
+        "",
+        "`daemon-launch-builder` stayed in compose-ai-tools and is still versioned with the",
+        "plugin, so scripts/check-daemon-launch-schema.mjs keeps reading it at",
+        "`composeAiPlugin`."
     ],
-    "composeAiPlugin": "1.61.2"
+    "composeAiPlugin": "2.18.1",
+    "composePreviewDaemon": "3.8.0"
 }
