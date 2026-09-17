@@ -67,11 +67,28 @@ if [[ -z "$plugin_version" ]]; then
   ' "$script_dir")"
 fi
 
+# The daemon version the pinned plugin resolves, from the same file. A consumer
+# catalog cannot name one version for everything any more: `preview-annotations`
+# left compose-ai-tools with the daemon and publishes on its own 3.x train, so it
+# has no release at the plugin's version. `scripts/check-daemon-pin.mjs` is what
+# keeps this value honest against the plugin's published POM.
+daemon_version="${DAEMON_VERSION:-}"
+if [[ -z "$daemon_version" ]]; then
+  daemon_version="$(node -e '
+    const { readFileSync } = require("node:fs");
+    const { resolve } = require("node:path");
+    const pin = JSON.parse(readFileSync(resolve(process.argv[1], "../plugin-version.json"), "utf8"));
+    if (!pin.composePreviewDaemon) { throw new Error("no composePreviewDaemon pin in plugin-version.json"); }
+    process.stdout.write(pin.composePreviewDaemon);
+  ' "$script_dir")"
+fi
+
 android_sdk_dir="${ANDROID_SDK_DIR:-${ANDROID_HOME:-/opt/android-sdk}}"
 
 echo "[setup-external-e2e] target=$target_dir" >&2
 echo "[setup-external-e2e] repo=$repo_url@$repo_ref" >&2
 echo "[setup-external-e2e] plugin_version=$plugin_version" >&2
+echo "[setup-external-e2e] daemon_version=$daemon_version" >&2
 echo "[setup-external-e2e] android_sdk_dir=$android_sdk_dir" >&2
 
 if [[ ! -d "$target_dir/.git" ]]; then
@@ -105,35 +122,23 @@ else
   )
 fi
 
-# Rewrite the catalog so the plugin resolves to our SNAPSHOT instead of the
-# stale published version Confetti currently pins. The pre-applied detector
-# in the extension's init-script keys off `alias(libs.plugins.<x>)`, so
-# Gradle still applies it via the catalog — we just point the catalog at a
-# different version. Idempotent: running twice produces the same file.
+# Rewrite the catalog so the plugin resolves to our pin instead of the stale
+# published version Confetti currently pins — and so the daemon-train libraries
+# beside it resolve to the daemon release that plugin actually speaks to, which
+# is a different version since the split. See rewrite-external-catalog.py for
+# why one version key is no longer enough.
+#
+# The pre-applied detector in the extension's init-script keys off
+# `alias(libs.plugins.<x>)`, so Gradle still applies the plugin via the catalog —
+# we just point the catalog at different versions. Idempotent: running twice
+# produces the same file.
 catalog="$target_dir/gradle/libs.versions.toml"
 if [[ ! -f "$catalog" ]]; then
   echo "[setup-external-e2e] expected $catalog — repo layout changed?" >&2
   exit 1
 fi
-python3 - "$catalog" "$plugin_version" <<'PY'
-import re
-import sys
-
-path, version = sys.argv[1], sys.argv[2]
-with open(path, "r", encoding="utf-8") as fh:
-    text = fh.read()
-new = re.sub(
-    r'^(\s*composeai-preview\s*=\s*)"[^"]+"',
-    rf'\g<1>"{version}"',
-    text,
-    count=1,
-    flags=re.MULTILINE,
-)
-if new == text:
-    sys.exit("composeai-preview entry not found in catalog; refusing to proceed")
-with open(path, "w", encoding="utf-8") as fh:
-    fh.write(new)
-PY
+python3 "$script_dir/rewrite-external-catalog.py" \
+  "$catalog" "$plugin_version" "$daemon_version"
 
 # Android SDK path — Confetti and most Android consumers fail Gradle
 # configuration without one of `local.properties:sdk.dir`, `ANDROID_HOME`,

@@ -130,7 +130,18 @@ Fixtures` workflow checks them against each other and fails on any difference.
 
 `npm run test:e2e-external` is the extension's end-to-end suite. It drives a real
 third-party Compose Multiplatform consumer (Confetti) that resolves the plugin **from
-Maven Central**, which is the only path this repo can honestly test. It runs nightly
+Maven Central**, which is the only path this repo can honestly test.
+
+`scripts/setup-external-e2e.sh` rewrites that consumer's version catalog to the pins
+in `plugin-version.json`, and since the split it has to write **two** versions.
+Confetti refs one `composeai-preview` key from both the plugin alias and its
+`preview-annotations` library, and `preview-annotations` now publishes from the
+daemon repository on the 3.x train — its last release on the plugin's train is
+`2.4.1`. So `scripts/rewrite-external-catalog.py` adds a `composeai-preview-daemon`
+key and repoints the daemon-train libraries at it. It fails loudly on any other
+`ee.schimke.composeai:` library still riding the plugin version rather than letting
+it resolve wrongly. **This is what a real consumer hits too**: a catalog with one
+`composeai` version ref stops resolving the moment it moves to a 2.x plugin. It runs nightly
 rather than on every PR, because it tracks upstream `main` and can go red without
 anything here changing.
 
