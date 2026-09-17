@@ -14,7 +14,7 @@
     },
     "homepage": "https://github.com/yschimke/compose-preview-vscode#readme",
     "engines": {
-        "vscode": "1.135.0"
+        "vscode": "^1.135.0"
     },
     "icon": "media/icon.png",
     "galleryBanner": {
@@ -274,8 +274,9 @@
         "watch:webview": "node esbuild.webview.mjs --watch",
         "format": "prettier --write --tab-width 4 package.json package-lock.json tsconfig.json tsconfig.webview.json README.md \"scripts/**/*.mjs\" \"scripts/**/*.json\" \"src/**/*.ts\" \"src/**/*.json\" \"media/**/*.css\"",
         "format:check": "prettier --check --tab-width 4 package.json package-lock.json tsconfig.json tsconfig.webview.json README.md \"scripts/**/*.mjs\" \"scripts/**/*.json\" \"src/**/*.ts\" \"src/**/*.json\" \"media/**/*.css\"",
-        "test": "npm run test:schema && npm run compile && mocha --exit out/test/runMocha.js",
+        "test": "npm run test:schema && npm run test:pin && npm run compile && mocha --exit out/test/runMocha.js",
         "test:schema": "node --test scripts/test-check-daemon-launch-schema.mjs",
+        "test:pin": "node --test scripts/test-check-daemon-pin.mjs",
         "test:electron": "npm run compile && node ./out/test/electron/runTest.js",
         "test:e2e": "npm run compile && COMPOSE_PREVIEW_E2E=1 node ./out/test/electron/runTest.js",
         "test:e2e-external": "npm run compile && COMPOSE_PREVIEW_E2E_EXTERNAL=1 node ./out/test/electron/runTest.js",
@@ -286,28 +287,29 @@
         "harness:contract": "node esbuild.webview.mjs && playwright test -c preview-harness/playwright.config.mjs contract"
     },
     "devDependencies": {
-        "@happy-dom/global-registrator": "20.12.0",
+        "@happy-dom/global-registrator": "20.14.5",
         "@playwright/test": "1.62.1",
         "@types/mocha": "10.0.10",
-        "@types/node": "24.13.3",
-        "@types/three": "0.185.4",
+        "@types/node": "24.13.5",
+        "@types/three": "0.186.0",
         "@types/vscode": "1.134.0",
-        "@vscode/codicons": "0.0.45",
+        "@vscode/codicons": "0.0.46-24",
         "@vscode/test-electron": "3.1.0",
-        "@vscode/vsce": "3.9.2",
+        "@vscode/vsce": "4.0.0",
         "esbuild": "0.28.2",
         "glob": "13.0.6",
-        "happy-dom": "20.12.0",
+        "happy-dom": "20.14.5",
         "lit": "3.3.3",
-        "mocha": "11.8.0",
+        "mocha": "12.0.2",
         "playwright": "1.62.1",
-        "prettier": "3.9.6",
+        "prettier": "3.9.7",
         "typescript": "7.0.2"
     },
     "overrides": {
+        "qs": "6.16.0",
         "serialize-javascript": "7.1.1"
     },
     "dependencies": {
-        "three": "0.185.1"
+        "three": "0.186.0"
     }
 }

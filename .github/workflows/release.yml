@@ -93,6 +93,13 @@ jobs:
       - name: Daemon-launch schema matches the pinned plugin
         run: node scripts/check-daemon-launch-schema.mjs
 
+      # Same reasoning one layer out: the daemon is a separate repository on a separate release
+      # train, and `composePreviewDaemon` is only correct while the pinned plugin still resolves
+      # that daemon release. A release must not ship a VSIX whose vendored protocol fixtures came
+      # from a daemon the injected plugin does not speak to.
+      - name: Daemon pin matches the pinned plugin
+        run: node scripts/check-daemon-pin.mjs
+
       - name: Install dependencies
         run: npm ci
 

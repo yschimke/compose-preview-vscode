@@ -2,9 +2,20 @@
 
 The VS Code extension for [Compose Preview](https://github.com/yschimke/compose-ai-tools).
 This repository is **only** the extension: TypeScript, its webview, its Playwright
-harness and its fixtures. The Gradle plugin, the CLI, the daemon and the renderers
-live in [`yschimke/compose-ai-tools`](https://github.com/yschimke/compose-ai-tools),
-which this repo consumes as a **published artifact**.
+harness and its fixtures. Everything it drives is a **published artifact** from
+somewhere else, and "somewhere else" is now three repositories on three release
+trains:
+
+| Train | Repository | What it publishes | Latest seen here |
+| --- | --- | --- | --- |
+| `2.x` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) | the Gradle plugin, the CLI, `render-host`, `daemon-launch-builder` — `compose-ai-tools-bom` | `2.18.1` (the pin) |
+| `3.x` | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) | the daemons, the three renderers, `preview-annotations`, the `data-*` extractors — `compose-preview-daemon-bom` | `3.8.0` (what the pin resolves) |
+| `3.x` | [`compose-preview-contracts`](https://github.com/yschimke/compose-preview-contracts) | the wire contracts — `compose-preview-contracts-bom` | via the plugin |
+
+The version numbers are unrelated to each other and to this extension's. What ties
+them together is that every compose-ai-tools POM *imports* the daemon BOM, so a
+consumer that names only the plugin cannot skew from the daemon that plugin was
+compiled against — and this repository names only the plugin.
 
 ## The one rule that is different here
 
@@ -25,6 +36,19 @@ releases*, so:
 - **Use `PLUGIN_VERSION` for local SNAPSHOT loops** against a `publishToMavenLocal`
   from a compose-ai-tools checkout. `scripts/generate-version.mjs` honours it, and
   `initScript.ts` turns mavenLocal on automatically for any `-SNAPSHOT` coordinate.
+
+The same file carries a second value, `composePreviewDaemon`, and it is **derived,
+not chosen**. Since the daemon left compose-ai-tools, the protocol fixtures and the
+daemon wire live in a repository whose tags have nothing to do with the plugin's
+version, so this repository has to write down which daemon release the pinned plugin
+resolves in order to fetch from the right tag. That value is a published fact — the
+`compose-preview-daemon-bom` import in `render-host-<composeAiPlugin>.pom` — so
+`scripts/check-daemon-pin.mjs` reads it back off Maven Central and fails when the two
+have skewed. Run it after bumping `composeAiPlugin`; it prints the value to use.
+
+`daemon-launch-builder` did **not** move — it is still versioned with the plugin, so
+`scripts/check-daemon-launch-schema.mjs` keeps reading its schema metadata at
+`composeAiPlugin`.
 
 ## Commands
 
@@ -55,8 +79,10 @@ wire up ESLint properly or drop the script — don't add it to CI expecting it t
 
 | You are looking for | It is in |
 | --- | --- |
-| Gradle plugin, CLI, daemon, renderers | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) |
-| `compose-preview serve` and its harness | `compose-ai-tools`, `preview-server/preview-harness/` |
+| Gradle plugin, CLI, `daemon-launch-builder` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) |
+| The daemon, the renderers, the `data-*` extractors, the protocol fixtures | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) |
+| The wire contracts | [`compose-preview-contracts`](https://github.com/yschimke/compose-preview-contracts) |
+| `compose-preview serve` and its harness | [`compose-preview-server`](https://github.com/yschimke/compose-preview-server) |
 | The `:samples:*` (mavenLocal) e2e suite | `compose-ai-tools` — it tests a plugin only that repo can build |
 | Consumer skill docs | [`yschimke/skills`](https://github.com/yschimke/skills) |
 
@@ -93,16 +119,29 @@ consider whether the other copy has it too — that is the accepted cost.
 
 ## Vendored protocol fixtures
 
-`protocol-fixtures/` is a **copy** of `docs/daemon/protocol-fixtures/` from upstream,
-at the release the pin names. Do not hand-edit it. Bump the pin, then run
-`scripts/sync-protocol-fixtures.sh`, and commit both together — the `Protocol
+`protocol-fixtures/` is a **copy** of `docs/daemon/protocol-fixtures/` from
+[`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon), at the
+release `composePreviewDaemon` names — not from compose-ai-tools, and not at the
+plugin's version. Do not hand-edit it. Bump the pins, then run
+`scripts/sync-protocol-fixtures.sh`, and commit them together — the `Protocol
 Fixtures` workflow checks them against each other and fails on any difference.
 
 ## Testing posture
 
 `npm run test:e2e-external` is the extension's end-to-end suite. It drives a real
 third-party Compose Multiplatform consumer (Confetti) that resolves the plugin **from
-Maven Central**, which is the only path this repo can honestly test. It runs nightly
+Maven Central**, which is the only path this repo can honestly test.
+
+`scripts/setup-external-e2e.sh` rewrites that consumer's version catalog to the pins
+in `plugin-version.json`, and since the split it has to write **two** versions.
+Confetti refs one `composeai-preview` key from both the plugin alias and its
+`preview-annotations` library, and `preview-annotations` now publishes from the
+daemon repository on the 3.x train — its last release on the plugin's train is
+`2.4.1`. So `scripts/rewrite-external-catalog.py` adds a `composeai-preview-daemon`
+key and repoints the daemon-train libraries at it. It fails loudly on any other
+`ee.schimke.composeai:` library still riding the plugin version rather than letting
+it resolve wrongly. **This is what a real consumer hits too**: a catalog with one
+`composeai` version ref stops resolving the moment it moves to a 2.x plugin. It runs nightly
 rather than on every PR, because it tracks upstream `main` and can go red without
 anything here changing.
 
@@ -199,6 +238,10 @@ quietly.
   checks `DAEMON_DESCRIPTOR_SCHEMA_VERSION` against the machine-readable schema
   metadata published with that exact `daemon-launch-builder` release, and scans
   its own TypeScript tree for unregistered copies of the version constant.
+- **The daemon pin is the one the pinned plugin resolves.** `Plugin Pin` reads the
+  `compose-preview-daemon-bom` import out of the plugin release's published POM, so
+  a `composeAiPlugin` bump cannot leave the fixture source pointing at a daemon
+  release that plugin never speaks to.
 - **The tag matches `package.json`.** A mismatch means the tag was cut by hand;
   stamping over it would publish a VSIX whose version is not the one in the
   repository.
@@ -238,8 +281,9 @@ Three things do not update on their own:
 | Held | Why |
 | --- | --- |
 | `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync, and `automerge: false` because a bot cannot do the baseline half. |
-| `@types/vscode` | Has to stay in step with `engines.vscode`, which Renovate does not touch. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
-| `plugin-version.json` | Not a package manifest — no bot sees it. The compatibility pin is bumped by hand in its own PR, as [the rule at the top of this file](#the-one-rule-that-is-different-here) requires. |
+| `@types/vscode` | Has to stay in step with `engines.vscode`. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
+| `engines.vscode` | Renovate is switched **off** for it, not merely gated. It is a semver *range* matched against the running editor, so the preset's `rangeStrategy: pin` produced a bare `1.135.0` in [#11](https://github.com/yschimke/compose-preview-vscode/pull/11) — which VS Code reads as *only* 1.135.0, and every later editor then refuses to load the extension ("Extension is not compatible with Code 1.138.0"). It broke both Electron suites the day stable moved past the pin, on `main` as much as on any branch. Keep the caret; `src/test/extensionManifest.test.ts` fails if it is ever pinned again. |
+| `plugin-version.json` | Not a package manifest — no bot sees it. The compatibility pin is bumped by hand in its own PR, as [the rule at the top of this file](#the-one-rule-that-is-different-here) requires, and `composePreviewDaemon` follows from it rather than moving on its own. |
 
 The first two are dashboard-gated rather than disabled, so the upgrade stays
 *visible* and is taken deliberately.
