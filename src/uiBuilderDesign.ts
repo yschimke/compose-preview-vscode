@@ -58,8 +58,18 @@ export function parseDesign(text: string): ParsedDesign {
     if (typeof design.catalogPin?.systemId !== "string") {
         return { kind: "invalid", reason: "catalogPin.systemId is missing" };
     }
-    if (!Array.isArray(design.roots) || typeof design.nodes !== "object") {
-        return { kind: "invalid", reason: "roots or nodes is missing" };
+    if (
+        !Array.isArray(design.roots) ||
+        !design.roots.every((root) => typeof root === "string")
+    ) {
+        return { kind: "invalid", reason: "roots is not a list of node ids" };
+    }
+    if (
+        typeof design.nodes !== "object" ||
+        design.nodes === null ||
+        Array.isArray(design.nodes)
+    ) {
+        return { kind: "invalid", reason: "nodes is not an object of nodes" };
     }
     return { kind: "design", design: design as DesignDocument };
 }
@@ -86,9 +96,22 @@ export function layerTree(design: DesignDocument): LayerItem[] {
     const seen = new Set<string>();
     const build = (nodeId: string): LayerItem | undefined => {
         const node = design.nodes[nodeId];
-        if (!node || seen.has(nodeId)) return undefined;
+        if (typeof node !== "object" || node === null || seen.has(nodeId)) {
+            return undefined;
+        }
         seen.add(nodeId);
-        const slots = Object.entries(node.slots ?? {});
+        // Hand-edited text can hold anything; a slot that is not a list of ids
+        // is drawn empty rather than failing the whole tree.
+        const slots = Object.entries(
+            typeof node.slots === "object" && node.slots !== null
+                ? node.slots
+                : {},
+        ).map(([slot, ids]): [string, string[]] => [
+            slot,
+            Array.isArray(ids)
+                ? ids.filter((id) => typeof id === "string")
+                : [],
+        ]);
         const children =
             slots.length === 1
                 ? childrenOf(slots[0][1])
@@ -104,7 +127,7 @@ export function layerTree(design: DesignDocument): LayerItem[] {
             kind: "node",
             key: nodeId,
             nodeId,
-            label: componentLabel(node.componentId),
+            label: componentLabel(String(node.componentId ?? nodeId)),
             description: nodeDescription(node),
             children,
         };

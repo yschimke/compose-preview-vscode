@@ -157,6 +157,11 @@ export class UiBuilderPreviewViewProvider
                 }
             },
         );
+        await this.load(view);
+    }
+
+    private async load(view: vscode.WebviewView): Promise<void> {
+        this.ready = false;
         const host = this.editors.host;
         if (!host.earlyFeaturesEnabled()) {
             view.webview.html = placeholderHtml(
@@ -172,6 +177,11 @@ export class UiBuilderPreviewViewProvider
             );
         }
         this.follow(this.editors.active);
+    }
+
+    /** Reloads the archive into an open view, after `webDistPath` changes. */
+    async reload(): Promise<void> {
+        if (this.view) await this.load(this.view);
     }
 
     private follow(session: UiBuilderSession | undefined): void {

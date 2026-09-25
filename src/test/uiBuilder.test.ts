@@ -316,6 +316,17 @@ describe("uiBuilderDesign", () => {
             "invalid",
         );
         assert.strictEqual(parseDesign(JSON.stringify(DESIGN)).kind, "design");
+        for (const nodes of [null, [], "x"]) {
+            assert.strictEqual(
+                parseDesign(JSON.stringify({ ...DESIGN, nodes })).kind,
+                "invalid",
+                JSON.stringify(nodes),
+            );
+        }
+        assert.strictEqual(
+            parseDesign(JSON.stringify({ ...DESIGN, roots: [1] })).kind,
+            "invalid",
+        );
     });
 
     it("draws slots only where a node has several, like the editor's Layers dock", () => {
@@ -334,6 +345,26 @@ describe("uiBuilderDesign", () => {
             [
                 ["Button", 'button · "Ready"'],
                 ["Linear progress indicator", "progress"],
+            ],
+        );
+    });
+
+    it("draws malformed nodes and slots without throwing", () => {
+        const malformed = {
+            ...DESIGN,
+            roots: ["a", "missing"],
+            nodes: {
+                a: { id: "a", slots: { children: "b", other: [1, "b"] } },
+                b: null,
+            },
+        } as unknown as DesignDocument;
+        const [a] = layerTree(malformed);
+        assert.strictEqual(a.label, "A");
+        assert.deepStrictEqual(
+            a.children.map((c) => [c.label, c.children.length]),
+            [
+                ["children", 0],
+                ["other", 0],
             ],
         );
     });
@@ -442,6 +473,15 @@ describe("UiBuilderDocumentSync", () => {
         h.sync.editorChanged(edited("from canvas"));
         assert.deepStrictEqual(h.applied, []);
         assert.match(h.statuses.at(-1) ?? "", /not saved/);
+    });
+
+    it("does not write the canvas back over a file emptied in the text editor", () => {
+        const h = harness();
+        h.setText("");
+        h.timers.forEach((t) => t());
+        assert.match(h.statuses.at(-1) ?? "", /file is empty/);
+        h.sync.editorChanged(edited("stale canvas"));
+        assert.deepStrictEqual(h.applied, []);
     });
 
     it("says so when VS Code refuses an edit", async () => {

@@ -119,8 +119,16 @@ export class UiBuilderDocumentSync {
                 `Showing the last valid version: the file is ${parsed.reason}.`,
                 "warning",
             );
+        } else {
+            // The file was emptied under an open editor. Seeding is for a file
+            // that opens empty (the provider's business); here, writing the
+            // canvas's design back would undo what someone just did to the text.
+            this.documentUnreadable = true;
+            this.ports.showStatus(
+                "Showing the last valid version: the file is empty.",
+                "warning",
+            );
         }
-        // Empty is the provider's business: it seeds a new design.
     }
 
     dispose(): void {

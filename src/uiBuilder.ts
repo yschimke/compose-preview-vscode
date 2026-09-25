@@ -29,6 +29,11 @@ export function registerUiBuilder(
     });
     layers.attach(layersTree);
     const preview = new UiBuilderPreviewViewProvider(editors);
+    // Every webview running the archive: the editors and the Design Preview.
+    const reloadAll = () => {
+        editors.reloadAll();
+        void preview.reload();
+    };
 
     context.subscriptions.push(
         layers,
@@ -88,7 +93,7 @@ export function registerUiBuilder(
             },
         ),
         vscode.commands.registerCommand("composePreview.uiBuilder.reload", () =>
-            editors.reloadAll(),
+            reloadAll(),
         ),
         // The editor's own toolbar and rails, as editor-title actions.
         ...UI_BUILDER_CHROME_COMMANDS.map((entry) =>
@@ -105,7 +110,7 @@ export function registerUiBuilder(
                     "composePreview.earlyFeatures.enabled",
                 )
             ) {
-                editors.reloadAll();
+                reloadAll();
             }
         }),
     );
