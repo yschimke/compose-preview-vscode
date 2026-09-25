@@ -41,7 +41,9 @@ const browser = await chromium.launch({
 async function load(html, cspName) {
     await writeFile(join(root, "index.html"), html);
     const host = await startHost({ root, cspName });
-    const page = await browser.newPage({ viewport: { width: 400, height: 300 } });
+    const page = await browser.newPage({
+        viewport: { width: 400, height: 300 },
+    });
     const errors = [];
     page.on("pageerror", (error) => errors.push(String(error)));
     await page.goto(host.url, { waitUntil: "load" });
@@ -55,7 +57,9 @@ async function load(html, cspName) {
 
 const failures = [];
 function check(name, ok, detail) {
-    console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
+    console.log(
+        `${ok ? "ok  " : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`,
+    );
     if (!ok) failures.push(name);
 }
 
@@ -81,7 +85,10 @@ check(
 // The un-nonced control: strip the harness's nonce injection by pre-setting a
 // wrong nonce, which is what an inline script the extension forgot looks like.
 const unnonced = await load(
-    PAINTING.replace("<script type=\"module\">", "<script nonce=\"wrong\" type=\"module\">"),
+    PAINTING.replace(
+        '<script type="module">',
+        '<script nonce="wrong" type="module">',
+    ),
     "baseline",
 );
 check(

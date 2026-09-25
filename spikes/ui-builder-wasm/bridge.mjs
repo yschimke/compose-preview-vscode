@@ -24,6 +24,7 @@
 //                   [--role=preview]  the Design Preview view instead of the editor
 //                   [--select=<nodeId>] select a layer from the host side
 //                   [--invoke=id,id]  run the editor's toolbar/rail controls the host draws
+//                   [--theme=dark|light|none] [--switch-theme=light|dark]  VS Code theme colours
 //
 // `CHROMIUM_PATH` picks the browser. Playwright's headless shell is the one
 // that paints in a software-GL container (it is what compose-preview-server's
@@ -36,6 +37,7 @@ import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { themeStyle } from "./vscode-themes.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -56,6 +58,11 @@ const editAt = flag("edit-at");
 const role = flag("role", "editor");
 const selectNode = flag("select");
 const invokeIds = flag("invoke", "").split(",").filter(Boolean);
+// A VS Code theme to give the page, as a webview gets one: `dark`, `light`, or
+// `none` for no workbench colours (the editor's own). `--switch-theme` flips
+// it after the first capture, to check the editor follows a live change.
+const themeKind = flag("theme", "dark");
+const switchTheme = flag("switch-theme");
 const outDir = resolve(here, "out/bridge");
 await mkdir(outDir, { recursive: true });
 
@@ -110,13 +117,22 @@ const resourceOrigin = `http://127.0.0.1:${resources.address().port}`;
 const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString(
     "base64",
 );
-const html = uiBuilderWebviewHtml({
+const webviewHtml = uiBuilderWebviewHtml({
     indexHtml: await readFile(join(dist, "index.html"), "utf8"),
     baseHref: `${resourceOrigin}/`,
     cspSource: resourceOrigin,
     nonce,
     role,
 });
+// A webview's <html> arrives carrying the workbench theme as `--vscode-*`
+// variables on its style attribute; this is that, for the chosen theme.
+const html =
+    themeKind === "none"
+        ? webviewHtml
+        : webviewHtml.replace(
+              /<html([^>]*)>/i,
+              `<html$1 style="${themeStyle(themeKind)}">`,
+          );
 await writeFile(join(outDir, "page.html"), html);
 const page = createServer((request, response) => {
     if (request.url === "/" || request.url.startsWith("/?")) {
@@ -194,6 +210,13 @@ let verdict = "FAIL";
 try {
     await tab.goto(pageUrl, { waitUntil: "domcontentloaded" });
     await waitForPosted("compose-ui-builder/ready");
+    const theme = await tab.evaluate(() =>
+        globalThis.composeUiBuilderHost?.readTheme?.(),
+    );
+    const parsedTheme = theme ? JSON.parse(theme) : undefined;
+    console.log(
+        `${at()} host theme: ${parsedTheme ? `${Object.keys(parsedTheme.roles).length} roles, ${Object.keys(parsedTheme.palette).length} palette colours` : "none"}`,
+    );
 
     const open = { type: "compose-ui-builder/open" };
     let systemId;
@@ -247,6 +270,20 @@ try {
     await tab.waitForTimeout(3000);
     await tab.screenshot({ path: join(outDir, "editor.png") });
     console.log(`${at()} screenshot ${join(outDir, "editor.png")}`);
+
+    if (switchTheme) {
+        await tab.evaluate(
+            (style) => document.documentElement.setAttribute("style", style),
+            themeStyle(switchTheme),
+        );
+        await tab.waitForTimeout(2000);
+        await tab.screenshot({
+            path: join(outDir, `theme-${switchTheme}.png`),
+        });
+        console.log(
+            `${at()} switched to the ${switchTheme} theme; screenshot theme-${switchTheme}.png`,
+        );
+    }
 
     const chrome = posted
         .filter((m) => m.type === "compose-ui-builder/chrome")

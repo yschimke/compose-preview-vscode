@@ -24,7 +24,12 @@ import {
     menuWhen,
     UI_BUILDER_CHROME_COMMANDS,
 } from "../uiBuilderChrome";
-import { uiBuilderCsp, uiBuilderWebviewHtml } from "../uiBuilderHtml";
+import {
+    UI_BUILDER_THEME_PALETTE,
+    UI_BUILDER_THEME_ROLES,
+    uiBuilderCsp,
+    uiBuilderWebviewHtml,
+} from "../uiBuilderHtml";
 import { UiBuilderDocumentSync } from "../uiBuilderSync";
 import { isSafeEntryName, readZip } from "../uiBuilderZip";
 
@@ -262,6 +267,67 @@ describe("uiBuilderHtml", () => {
         );
         assert.match(csp, /default-src 'none'/);
         assert.doesNotMatch(csp, /(^|\s)'unsafe-eval'/);
+    });
+
+    it("sends only theme roles and palette names the editor reads", () => {
+        // compose-ui-builder HostBridgeTheme.kt `withRole` and UiBuilderEditorPalette.
+        const editorRoles = new Set([
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "inversePrimary",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest",
+        ]);
+        const editorPalette = new Set([
+            "workspace",
+            "layerSelected",
+            "layerDragged",
+            "dropTarget",
+            "sessionBadge",
+            "onSessionBadge",
+        ]);
+        for (const role of Object.keys(UI_BUILDER_THEME_ROLES)) {
+            assert.ok(editorRoles.has(role), role);
+        }
+        for (const name of Object.keys(UI_BUILDER_THEME_PALETTE)) {
+            assert.ok(editorPalette.has(name), name);
+        }
+    });
+
+    it("reads the theme with a colour pattern that survives the template literal", () => {
+        // `\\d` in the bootstrap's template literal reached the page as `d`
+        // and matched nothing, so every theme colour was silently dropped.
+        assert.match(html, /color\.match\(\/\[0-9\.\]\+\/g\)/);
+        assert.match(html, /readTheme/);
     });
 
     it("refuses a base that would drop the last path segment", () => {

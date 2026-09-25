@@ -22,7 +22,9 @@ const dist = resolve(here, "out/dist");
 const captures = resolve(here, "out/captures");
 
 function flag(name, fallback) {
-    const match = process.argv.find((argument) => argument.startsWith(`--${name}=`));
+    const match = process.argv.find((argument) =>
+        argument.startsWith(`--${name}=`),
+    );
     return match ? match.slice(name.length + 3) : fallback;
 }
 
@@ -114,7 +116,10 @@ try {
     stage("screenshot");
 
     await mkdir(captures, { recursive: true });
-    const shot = await page.screenshot({ timeout: 60_000, animations: "disabled" });
+    const shot = await page.screenshot({
+        timeout: 60_000,
+        animations: "disabled",
+    });
     await writeFile(resolve(captures, `${cspName}.png`), shot);
     painted = paintStats(decodePng(shot));
     stage(`painted ${painted.distinctColours} colours`);
@@ -149,7 +154,6 @@ console.log(JSON.stringify(report, null, 4));
 // "Painted" is a canvas that exists and holds more than a flat fill. A Compose
 // editor is a busy screen; anything under a few hundred colours is a blank or a
 // single-colour surface, not an editor.
-const ok =
-    canvas !== null && painted !== null && painted.distinctColours > 100;
+const ok = canvas !== null && painted !== null && painted.distinctColours > 100;
 console.log(ok ? "\nPAINTS: yes" : "\nPAINTS: no");
 process.exitCode = ok ? 0 : 1;

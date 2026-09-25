@@ -50,7 +50,8 @@ export function decodePng(buffer) {
         const filter = raw[y * (stride + 1)];
         const line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
         const out = pixels.subarray(y * stride, (y + 1) * stride);
-        const prior = y === 0 ? null : pixels.subarray((y - 1) * stride, y * stride);
+        const prior =
+            y === 0 ? null : pixels.subarray((y - 1) * stride, y * stride);
         for (let x = 0; x < stride; x += 1) {
             const a = x >= channels ? out[x - channels] : 0;
             const b = prior ? prior[x] : 0;

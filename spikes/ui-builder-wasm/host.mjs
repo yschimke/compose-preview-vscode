@@ -91,7 +91,10 @@ export function webviewHtml(source, { csp, nonce, baseHref }) {
                 ? `\n    <meta http-equiv="Content-Security-Policy" content="${csp}">`
                 : ""),
     );
-    html = html.replace(/<script(?![^>]*\bnonce=)/g, `<script nonce="${nonce}"`);
+    html = html.replace(
+        /<script(?![^>]*\bnonce=)/g,
+        `<script nonce="${nonce}"`,
+    );
     return html;
 }
 
@@ -127,7 +130,8 @@ export async function startHost({ root, cspName = "predicted", port = 0 }) {
             const info = await stat(file);
             if (!info.isFile()) throw new Error("not a file");
             response.writeHead(200, {
-                "content-type": TYPES[extname(file)] ?? "application/octet-stream",
+                "content-type":
+                    TYPES[extname(file)] ?? "application/octet-stream",
                 "content-length": info.size,
                 "cache-control": "no-store",
             });

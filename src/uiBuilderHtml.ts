@@ -42,6 +42,75 @@ export const UI_BUILDER_STATUS_MESSAGE = "compose-preview/ui-builder-status";
 export const UI_BUILDER_PAGE_ERROR_MESSAGE =
     "compose-preview/ui-builder-page-error";
 
+/**
+ * Which VS Code theme colour draws which part of the editor's own UI.
+ *
+ * The editor takes a theme in Material 3's vocabulary (compose-ui-builder
+ * `HostBridgeTheme.kt`): colour-scheme roles, plus a few editor colours that
+ * are not roles. This is the VS Code half: for each, the workbench colours to
+ * try in order, as the `--vscode-*` variables every webview is given. The
+ * first one the current theme defines wins, and a role with none defined is
+ * left to the editor's base scheme.
+ *
+ * The shape follows the workbench: panels are side-bar coloured, the canvas
+ * behind the design is the editor background, selection is list selection,
+ * buttons are buttons.
+ */
+export const UI_BUILDER_THEME_ROLES: Readonly<
+    Record<string, readonly string[]>
+> = {
+    background: ["editor-background"],
+    onBackground: ["editor-foreground", "foreground"],
+    surface: ["sideBar-background", "editor-background"],
+    onSurface: ["sideBar-foreground", "foreground"],
+    surfaceVariant: ["input-background", "editorWidget-background"],
+    onSurfaceVariant: ["descriptionForeground", "foreground"],
+    surfaceContainerLowest: ["editor-background"],
+    surfaceContainerLow: ["sideBar-background", "editor-background"],
+    surfaceContainer: ["editorWidget-background", "sideBar-background"],
+    surfaceContainerHigh: ["dropdown-background", "editorWidget-background"],
+    surfaceContainerHighest: ["input-background", "dropdown-background"],
+    // Material tints raised surfaces with this; the side bar keeps them flat, as VS Code's are.
+    surfaceTint: ["sideBar-background", "editor-background"],
+    inverseSurface: ["editorHoverWidget-background", "editorWidget-background"],
+    inverseOnSurface: ["editorHoverWidget-foreground", "foreground"],
+    primary: ["button-background", "focusBorder"],
+    onPrimary: ["button-foreground"],
+    primaryContainer: ["list-activeSelectionBackground"],
+    onPrimaryContainer: ["list-activeSelectionForeground", "foreground"],
+    secondary: ["textLink-foreground"],
+    secondaryContainer: [
+        "button-secondaryBackground",
+        "list-inactiveSelectionBackground",
+    ],
+    onSecondaryContainer: ["button-secondaryForeground", "foreground"],
+    tertiary: ["textLink-activeForeground", "textLink-foreground"],
+    error: ["errorForeground"],
+    errorContainer: ["inputValidation-errorBackground"],
+    onErrorContainer: ["foreground"],
+    outline: [
+        "widget-border",
+        "input-border",
+        "panel-border",
+        "contrastBorder",
+    ],
+    outlineVariant: ["panel-border", "sideBar-border", "editorGroup-border"],
+};
+
+export const UI_BUILDER_THEME_PALETTE: Readonly<
+    Record<string, readonly string[]>
+> = {
+    workspace: ["editor-background"],
+    layerSelected: ["list-activeSelectionBackground"],
+    layerDragged: ["list-dropBackground", "list-hoverBackground"],
+    dropTarget: ["list-dropBackground", "list-hoverBackground"],
+    sessionBadge: ["badge-background"],
+    onSessionBadge: ["badge-foreground"],
+};
+
+/** Sent to the editor page itself when the workbench theme changes. */
+export const UI_BUILDER_THEME_MESSAGE = "compose-ui-builder/theme";
+
 export function uiBuilderCsp(cspSource: string, nonce: string): string {
     return [
         "default-src 'none'",
@@ -89,6 +158,7 @@ function escapeAttribute(value: string): string {
 }
 
 const BOOTSTRAP_STYLE = `
+html body { background: var(--vscode-editor-background, #1e1e1e) !important; }
 #compose-preview-ui-builder-status {
     position: fixed; left: 0; right: 0; top: 0; z-index: 2147483647;
     padding: 6px 12px; font: 12px/1.4 var(--vscode-font-family, system-ui, sans-serif);
@@ -108,10 +178,53 @@ function bootstrapScript(role: UiBuilderRole): string {
     return `
 (() => {
     const vscode = acquireVsCodeApi();
+    // The workbench theme, as the editor's Material roles (UI_BUILDER_THEME_ROLES).
+    const themeRoles = ${JSON.stringify(UI_BUILDER_THEME_ROLES)};
+    const themePalette = ${JSON.stringify(UI_BUILDER_THEME_PALETTE)};
+    function argb(value) {
+        // Any CSS colour, normalised by the engine to rgb()/rgba().
+        const probe = document.createElement("span");
+        probe.style.color = value;
+        if (!probe.style.color) return undefined;
+        probe.style.display = "none";
+        document.documentElement.appendChild(probe);
+        const parts = getComputedStyle(probe).color.match(/[0-9.]+/g);
+        probe.remove();
+        if (!parts || parts.length < 3) return undefined;
+        const [r, g, b] = parts.slice(0, 3).map(Number);
+        const a = parts.length > 3 ? Math.round(Number(parts[3]) * 255) : 255;
+        return ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
+    }
+    function resolve(table) {
+        const style = getComputedStyle(document.documentElement);
+        const out = {};
+        for (const [name, vars] of Object.entries(table)) {
+            for (const v of vars) {
+                const value = style.getPropertyValue("--vscode-" + v).trim();
+                const color = value ? argb(value) : undefined;
+                if (color !== undefined) {
+                    out[name] = color;
+                    break;
+                }
+            }
+        }
+        return out;
+    }
+    const readTheme = () =>
+        JSON.stringify({ roles: resolve(themeRoles), palette: resolve(themePalette) });
     globalThis.composeUiBuilderHost = {
         role: ${JSON.stringify(role)},
         postMessage: (message) => vscode.postMessage(message),
+        readTheme,
     };
+    // VS Code rewrites the variables on <html> when the theme changes.
+    let lastTheme = "";
+    new MutationObserver(() => {
+        const theme = readTheme();
+        if (theme === lastTheme) return;
+        lastTheme = theme;
+        window.postMessage({ type: ${JSON.stringify(UI_BUILDER_THEME_MESSAGE)}, theme }, "*");
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class"] });
     const statusId = "compose-preview-ui-builder-status";
     function showStatus(message, severity) {
         let banner = document.getElementById(statusId);
