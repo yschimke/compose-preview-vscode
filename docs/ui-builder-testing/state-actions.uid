@@ -1,0 +1,164 @@
+{
+    "schema": "compose-ui-builder-document/v1-candidate",
+    "id": "state-actions",
+    "title": "State actions",
+    "revision": 0,
+    "catalogPin": {
+        "systemId": "m3-catalog",
+        "catalogRevision": "candidate",
+        "capabilityDigest": "candidate",
+        "nativeRuntimeId": "candidate"
+    },
+    "environment": {
+        "widthDp": 400,
+        "heightDp": 800,
+        "density": 1.0,
+        "theme": "light",
+        "dynamicColor": null,
+        "locale": "en-US",
+        "fontScale": 1.0,
+        "layoutDirection": "ltr",
+        "windowPosture": "flat",
+        "browserZoomPercent": null,
+        "fixedTime": null,
+        "animations": "settled",
+        "networkAccess": false,
+        "background": null,
+        "typeface": null,
+        "exportDevices": []
+    },
+    "stateVariables": {
+        "label": {
+            "type": "value",
+            "valueType": "string",
+            "nullable": null,
+            "initialValue": "Ready",
+            "persistence": "preview"
+        },
+        "enabled": {
+            "type": "value",
+            "valueType": "bool",
+            "nullable": null,
+            "initialValue": true,
+            "persistence": "preview"
+        },
+        "progress": {
+            "type": "value",
+            "valueType": "float",
+            "nullable": null,
+            "initialValue": 0,
+            "persistence": "preview"
+        }
+    },
+    "roots": [
+        "column"
+    ],
+    "nodes": {
+        "column": {
+            "id": "column",
+            "componentId": "layout/column",
+            "properties": {},
+            "modifiers": [],
+            "slots": {
+                "children": [
+                    "button",
+                    "progress"
+                ]
+            },
+            "eventBindings": {},
+            "predicate": null,
+            "accessibility": null,
+            "assetBindings": {},
+            "tokenBindings": {},
+            "component": null
+        },
+        "button": {
+            "id": "button",
+            "componentId": "m3/button",
+            "properties": {
+                "style": {
+                    "type": "enum",
+                    "value": "filled"
+                },
+                "enabled": {
+                    "type": "state",
+                    "variable": "enabled"
+                }
+            },
+            "modifiers": [],
+            "slots": {
+                "content": [
+                    "label"
+                ]
+            },
+            "eventBindings": {
+                "click": [
+                    {
+                        "type": "set",
+                        "variable": "label",
+                        "value": "Updated"
+                    },
+                    {
+                        "type": "toggle",
+                        "variable": "enabled"
+                    },
+                    {
+                        "type": "set",
+                        "variable": "progress",
+                        "value": 1
+                    }
+                ]
+            },
+            "predicate": null,
+            "accessibility": null,
+            "assetBindings": {},
+            "tokenBindings": {},
+            "component": null
+        },
+        "label": {
+            "id": "label",
+            "componentId": "m3/text",
+            "properties": {
+                "text": {
+                    "type": "state",
+                    "variable": "label"
+                }
+            },
+            "modifiers": [],
+            "slots": {},
+            "eventBindings": {},
+            "predicate": null,
+            "accessibility": null,
+            "assetBindings": {},
+            "tokenBindings": {},
+            "component": null
+        },
+        "progress": {
+            "id": "progress",
+            "componentId": "m3/progress-indicator",
+            "properties": {
+                "variant": {
+                    "type": "enum",
+                    "value": "linear"
+                },
+                "progress": {
+                    "type": "state",
+                    "variable": "progress"
+                }
+            },
+            "modifiers": [],
+            "slots": {},
+            "eventBindings": {},
+            "predicate": null,
+            "accessibility": null,
+            "assetBindings": {},
+            "tokenBindings": {},
+            "component": null
+        }
+    },
+    "assets": {},
+    "tokenBindings": {},
+    "createdAtEpochMillis": null,
+    "updatedAtEpochMillis": null,
+    "components": {}
+}

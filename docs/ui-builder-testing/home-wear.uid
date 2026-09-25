@@ -1,0 +1,1179 @@
+{
+  "schema": "compose-ui-builder-document/v1-candidate",
+  "id": "google-home-wear",
+  "title": "Google Home — Devices (Wear)",
+  "revision": 0,
+  "catalogPin": {
+    "systemId": "wear-m3",
+    "catalogRevision": "wear-screen-scaffold-v1",
+    "capabilityDigest": "candidate",
+    "nativeRuntimeId": "candidate"
+  },
+  "environment": {
+    "widthDp": 192,
+    "heightDp": 192,
+    "density": 2,
+    "theme": "dark",
+    "dynamicColor": false,
+    "locale": "en-US",
+    "fontScale": 1,
+    "layoutDirection": "ltr",
+    "windowPosture": "flat",
+    "browserZoomPercent": 100,
+    "fixedTime": "2024-05-16T12:00:00Z",
+    "animations": "settled",
+    "networkAccess": false,
+    "exportDevices": [
+      "id:wearos_small_round",
+      "id:wearos_xl_round"
+    ]
+  },
+  "stateVariables": {},
+  "roots": [
+    "home-screen"
+  ],
+  "nodes": {
+    "home-screen": {
+      "id": "home-screen",
+      "componentId": "wear-m3/screen-scaffold",
+      "properties": {
+        "timeText": {
+          "type": "string",
+          "value": "10:10"
+        },
+        "scrollIndicator": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "home-list"
+        ],
+        "edgeButton": [
+          "home-add"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-list": {
+      "id": "home-list",
+      "componentId": "wear-m3/transforming-lazy-column",
+      "properties": {
+        "transformation": {
+          "type": "enum",
+          "value": "spec"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 4
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        }
+      ],
+      "slots": {
+        "items": [
+          "hdr-home",
+          "home-summary",
+          "sub-living",
+          "living-lamp",
+          "living-lamp-brightness",
+          "living-tv",
+          "living-speaker",
+          "sub-kitchen",
+          "kitchen-ceiling",
+          "kitchen-brightness",
+          "kitchen-under-cabinet",
+          "kitchen-nest",
+          "sub-bedroom",
+          "bedroom-lamp",
+          "bedroom-fan",
+          "bedroom-blinds",
+          "sub-thermostat",
+          "thermostat",
+          "thermostat-target",
+          "sub-cameras",
+          "camera-front",
+          "camera-garden",
+          "sub-scenes",
+          "scene-good-morning",
+          "scene-movie",
+          "scene-away",
+          "scene-bedtime",
+          "sub-routines",
+          "routine-sunset",
+          "routine-away",
+          "routine-night"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "hdr-home": {
+      "id": "hdr-home",
+      "componentId": "wear-m3/list-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Home"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-summary": {
+      "id": "home-summary",
+      "componentId": "wear-m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "title"
+        },
+        "stableKey": {
+          "type": "string",
+          "value": "home-summary"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "home-summary-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-summary-body": {
+      "id": "home-summary-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "children": [
+          "home-summary-line-0",
+          "home-summary-line-1"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-summary-line-0": {
+      "id": "home-summary-line-0",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "2 lights on"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-summary-line-1": {
+      "id": "home-summary-line-1",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Nest Hub · 21°C"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-living": {
+      "id": "sub-living",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Living room"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "living-lamp": {
+      "id": "living-lamp",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Floor lamp"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "On · 60%"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "living-lamp-brightness": {
+      "id": "living-lamp-brightness",
+      "componentId": "wear-m3/slider",
+      "properties": {
+        "value": {
+          "type": "float",
+          "value": 6
+        },
+        "valueFrom": {
+          "type": "float",
+          "value": 0
+        },
+        "valueTo": {
+          "type": "float",
+          "value": 10
+        },
+        "steps": {
+          "type": "float",
+          "value": 9
+        },
+        "segmented": {
+          "type": "enum",
+          "value": "segmented"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "living-tv": {
+      "id": "living-tv",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "TV backlight"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Off"
+        },
+        "checked": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "living-speaker": {
+      "id": "living-speaker",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Speaker"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Playing"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-kitchen": {
+      "id": "sub-kitchen",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Kitchen"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-ceiling": {
+      "id": "kitchen-ceiling",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Ceiling"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "On · 100%"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-brightness": {
+      "id": "kitchen-brightness",
+      "componentId": "wear-m3/slider",
+      "properties": {
+        "value": {
+          "type": "float",
+          "value": 10
+        },
+        "valueFrom": {
+          "type": "float",
+          "value": 0
+        },
+        "valueTo": {
+          "type": "float",
+          "value": 10
+        },
+        "steps": {
+          "type": "float",
+          "value": 9
+        },
+        "segmented": {
+          "type": "enum",
+          "value": "segmented"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-under-cabinet": {
+      "id": "kitchen-under-cabinet",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Under cabinet"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Off"
+        },
+        "checked": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-nest": {
+      "id": "kitchen-nest",
+      "componentId": "wear-m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "plain"
+        },
+        "stableKey": {
+          "type": "string",
+          "value": "kitchen-nest"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "kitchen-nest-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-nest-body": {
+      "id": "kitchen-nest-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "children": [
+          "kitchen-nest-line-0",
+          "kitchen-nest-line-1"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-nest-line-0": {
+      "id": "kitchen-nest-line-0",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Nest Mini"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "kitchen-nest-line-1": {
+      "id": "kitchen-nest-line-1",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Idle"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-bedroom": {
+      "id": "sub-bedroom",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Bedroom"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "bedroom-lamp": {
+      "id": "bedroom-lamp",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Bedside lamp"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Off"
+        },
+        "checked": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "bedroom-fan": {
+      "id": "bedroom-fan",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Fan"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "On · low"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "bedroom-blinds": {
+      "id": "bedroom-blinds",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Blinds"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Closed"
+        },
+        "checked": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-thermostat": {
+      "id": "sub-thermostat",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Thermostat"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat": {
+      "id": "thermostat",
+      "componentId": "wear-m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "title"
+        },
+        "stableKey": {
+          "type": "string",
+          "value": "thermostat"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "thermostat-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat-body": {
+      "id": "thermostat-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "children": [
+          "thermostat-line-0",
+          "thermostat-line-1",
+          "thermostat-line-2"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat-line-0": {
+      "id": "thermostat-line-0",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "21°C"
+        },
+        "style": {
+          "type": "enum",
+          "value": "displaySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat-line-1": {
+      "id": "thermostat-line-1",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Heating to 22°C"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat-line-2": {
+      "id": "thermostat-line-2",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Eco until 17:00"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "thermostat-target": {
+      "id": "thermostat-target",
+      "componentId": "wear-m3/slider",
+      "properties": {
+        "value": {
+          "type": "float",
+          "value": 22
+        },
+        "valueFrom": {
+          "type": "float",
+          "value": 15
+        },
+        "valueTo": {
+          "type": "float",
+          "value": 25
+        },
+        "steps": {
+          "type": "float",
+          "value": 9
+        },
+        "segmented": {
+          "type": "enum",
+          "value": "segmented"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-cameras": {
+      "id": "sub-cameras",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Cameras"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-front": {
+      "id": "camera-front",
+      "componentId": "wear-m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "app"
+        },
+        "stableKey": {
+          "type": "string",
+          "value": "camera-front"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "camera-front-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-front-body": {
+      "id": "camera-front-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "children": [
+          "camera-front-line-0",
+          "camera-front-line-1"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-front-line-0": {
+      "id": "camera-front-line-0",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Front door"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-front-line-1": {
+      "id": "camera-front-line-1",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Person seen 4 min ago"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-garden": {
+      "id": "camera-garden",
+      "componentId": "wear-m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "app"
+        },
+        "stableKey": {
+          "type": "string",
+          "value": "camera-garden"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "camera-garden-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-garden-body": {
+      "id": "camera-garden-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "children": [
+          "camera-garden-line-0",
+          "camera-garden-line-1"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-garden-line-0": {
+      "id": "camera-garden-line-0",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Garden"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "camera-garden-line-1": {
+      "id": "camera-garden-line-1",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Quiet"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-scenes": {
+      "id": "sub-scenes",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Scenes"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-good-morning": {
+      "id": "scene-good-morning",
+      "componentId": "wear-m3/button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "filled-tonal"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "scene-good-morning-label"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-good-morning-label": {
+      "id": "scene-good-morning-label",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Good morning"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-movie": {
+      "id": "scene-movie",
+      "componentId": "wear-m3/button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "filled-tonal"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "scene-movie-label"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-movie-label": {
+      "id": "scene-movie-label",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Movie night"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-away": {
+      "id": "scene-away",
+      "componentId": "wear-m3/button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "filled-tonal"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "scene-away-label"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-away-label": {
+      "id": "scene-away-label",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Away"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-bedtime": {
+      "id": "scene-bedtime",
+      "componentId": "wear-m3/button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "filled-tonal"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "scene-bedtime-label"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "scene-bedtime-label": {
+      "id": "scene-bedtime-label",
+      "componentId": "wear-m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Bedtime"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "sub-routines": {
+      "id": "sub-routines",
+      "componentId": "wear-m3/list-sub-header",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Routines"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "routine-sunset": {
+      "id": "routine-sunset",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Lights at sunset"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "Daily · 19:42"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "routine-away": {
+      "id": "routine-away",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Away mode"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "When everyone leaves"
+        },
+        "checked": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "routine-night": {
+      "id": "routine-night",
+      "componentId": "wear-m3/switch-button",
+      "properties": {
+        "label": {
+          "type": "string",
+          "value": "Night mode"
+        },
+        "secondaryLabel": {
+          "type": "string",
+          "value": "23:00"
+        },
+        "checked": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-add": {
+      "id": "home-add",
+      "componentId": "wear-m3/edge-button",
+      "properties": {
+        "size": {
+          "type": "enum",
+          "value": "small"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "home-add-icon"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "home-add-icon": {
+      "id": "home-add-icon",
+      "componentId": "wear-m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "add"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    }
+  },
+  "assets": {}
+}

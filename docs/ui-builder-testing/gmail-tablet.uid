@@ -1,0 +1,4386 @@
+{
+  "schema": "compose-ui-builder-document/v1-candidate",
+  "id": "google-gmail-tablet",
+  "title": "Gmail — Inbox and reading pane (tablet)",
+  "revision": 0,
+  "catalogPin": {
+    "systemId": "m3-catalog",
+    "catalogRevision": "candidate",
+    "capabilityDigest": "candidate",
+    "nativeRuntimeId": "candidate"
+  },
+  "environment": {
+    "widthDp": 1280,
+    "heightDp": 800,
+    "density": 1,
+    "theme": "light",
+    "dynamicColor": false,
+    "locale": "en-US",
+    "fontScale": 1,
+    "layoutDirection": "ltr",
+    "windowPosture": "flat",
+    "browserZoomPercent": 100,
+    "fixedTime": "2024-05-16T12:00:00Z",
+    "animations": "settled",
+    "networkAccess": false,
+    "exportDevices": [
+      "id:pixel_tablet",
+      "id:pixel_fold",
+      "id:pixel_7"
+    ]
+  },
+  "stateVariables": {},
+  "roots": [
+    "root"
+  ],
+  "nodes": {
+    "root": {
+      "id": "root",
+      "componentId": "layout/row",
+      "properties": {
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail",
+          "panes"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail": {
+      "id": "rail",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 6
+        }
+      },
+      "modifiers": [
+        {
+          "type": "width",
+          "widthDp": 88
+        },
+        {
+          "type": "fillMaxHeight"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "colorToken",
+            "value": "surfaceContainerLow"
+          }
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 12,
+          "endDp": 0,
+          "bottomDp": 0
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-compose",
+          "rail-inbox",
+          "rail-starred",
+          "rail-snoozed",
+          "rail-sent",
+          "rail-drafts"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-compose": {
+      "id": "rail-compose",
+      "componentId": "m3/button",
+      "properties": {
+        "style": {
+          "type": "enum",
+          "value": "fab"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 0,
+          "endDp": 0,
+          "bottomDp": 8
+        }
+      ],
+      "slots": {
+        "content": [
+          "icon-1"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-1": {
+      "id": "icon-1",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/edit"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Compose"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-inbox": {
+      "id": "rail-inbox",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 4,
+          "endDp": 0,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-inbox-pill",
+          "text-3"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-inbox-pill": {
+      "id": "rail-inbox-pill",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 56,
+          "heightDp": 32
+        },
+        {
+          "type": "clip",
+          "shape": "16"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "colorToken",
+            "value": "surfaceContainerHighest"
+          },
+          "shape": "16"
+        }
+      ],
+      "slots": {
+        "children": [
+          "icon-2"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-2": {
+      "id": "icon-2",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/inbox"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Inbox"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 22
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurface"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-3": {
+      "id": "text-3",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Inbox"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurface"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-starred": {
+      "id": "rail-starred",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 4,
+          "endDp": 0,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-starred-pill",
+          "text-5"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-starred-pill": {
+      "id": "rail-starred-pill",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 56,
+          "heightDp": 32
+        },
+        {
+          "type": "clip",
+          "shape": "16"
+        }
+      ],
+      "slots": {
+        "children": [
+          "icon-4"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-4": {
+      "id": "icon-4",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/star"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 22
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-5": {
+      "id": "text-5",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Starred"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-snoozed": {
+      "id": "rail-snoozed",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 4,
+          "endDp": 0,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-snoozed-pill",
+          "text-7"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-snoozed-pill": {
+      "id": "rail-snoozed-pill",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 56,
+          "heightDp": 32
+        },
+        {
+          "type": "clip",
+          "shape": "16"
+        }
+      ],
+      "slots": {
+        "children": [
+          "icon-6"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-6": {
+      "id": "icon-6",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/schedule"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Snoozed"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 22
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-7": {
+      "id": "text-7",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Snoozed"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-sent": {
+      "id": "rail-sent",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 4,
+          "endDp": 0,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-sent-pill",
+          "text-9"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-sent-pill": {
+      "id": "rail-sent-pill",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 56,
+          "heightDp": 32
+        },
+        {
+          "type": "clip",
+          "shape": "16"
+        }
+      ],
+      "slots": {
+        "children": [
+          "icon-8"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-8": {
+      "id": "icon-8",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "autoMirrored/outlined/send"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Sent"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 22
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-9": {
+      "id": "text-9",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Sent"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-drafts": {
+      "id": "rail-drafts",
+      "componentId": "layout/column",
+      "properties": {
+        "horizontalAlignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 4,
+          "endDp": 0,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "children": [
+          "rail-drafts-pill",
+          "text-11"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "rail-drafts-pill": {
+      "id": "rail-drafts-pill",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 56,
+          "heightDp": 32
+        },
+        {
+          "type": "clip",
+          "shape": "16"
+        }
+      ],
+      "slots": {
+        "children": [
+          "icon-10"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-10": {
+      "id": "icon-10",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/insertDriveFile"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Drafts"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 22
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-11": {
+      "id": "text-11",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Drafts"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelMedium"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "panes": {
+      "id": "panes",
+      "componentId": "layout/supporting-pane-scaffold",
+      "properties": {
+        "layoutMode": {
+          "type": "enum",
+          "value": "expandedTwoPane"
+        },
+        "mainPanePreferredWidthDp": {
+          "type": "float",
+          "value": 400
+        },
+        "supportingPanePreferredWidthDp": {
+          "type": "float",
+          "value": 760
+        },
+        "mainPaneVisible": {
+          "type": "bool",
+          "value": true
+        },
+        "supportingPaneVisible": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        },
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "mainPane": [
+          "list-pane"
+        ],
+        "supportingPane": [
+          "read-pane"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "list-pane": {
+      "id": "list-pane",
+      "componentId": "layout/scaffold",
+      "properties": {},
+      "modifiers": [],
+      "slots": {
+        "topBar": [
+          "mail-search"
+        ],
+        "content": [
+          "list-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "mail-search": {
+      "id": "mail-search",
+      "componentId": "m3/search-bar",
+      "properties": {
+        "expanded": {
+          "type": "bool",
+          "value": false
+        },
+        "shapeDp": {
+          "type": "float",
+          "value": 28
+        },
+        "tonalElevationDp": {
+          "type": "float",
+          "value": 0
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 8,
+          "topDp": 8,
+          "endDp": 8,
+          "bottomDp": 4
+        }
+      ],
+      "slots": {
+        "inputField": [
+          "mail-search-field"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "mail-search-field": {
+      "id": "mail-search-field",
+      "componentId": "m3/search-input-field",
+      "properties": {
+        "value": {
+          "type": "string",
+          "value": ""
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "placeholder": [
+          "text-12"
+        ],
+        "leadingIcon": [
+          "icon-13"
+        ],
+        "trailingIcon": [
+          "icon-14"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-12": {
+      "id": "text-12",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Search in mail"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyLarge"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-13": {
+      "id": "icon-13",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/menu"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Open navigation drawer"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-14": {
+      "id": "icon-14",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/accountCircle"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Google Account"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "list-body": {
+      "id": "list-body",
+      "componentId": "layout/column",
+      "properties": {},
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        }
+      ],
+      "slots": {
+        "children": [
+          "mail-chips",
+          "message-list"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "mail-chips": {
+      "id": "mail-chips",
+      "componentId": "layout/flow-row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 8
+        },
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 8
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 12,
+          "topDp": 8,
+          "endDp": 12,
+          "bottomDp": 8
+        }
+      ],
+      "slots": {
+        "children": [
+          "chip-all",
+          "chip-unread",
+          "chip-starred",
+          "chip-attachments"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "chip-all": {
+      "id": "chip-all",
+      "componentId": "m3/filter-chip",
+      "properties": {
+        "selected": {
+          "type": "bool",
+          "value": true
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "label": [
+          "text-15"
+        ],
+        "leadingIcon": [
+          "icon-16"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-15": {
+      "id": "text-15",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "All"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-16": {
+      "id": "icon-16",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/check"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Selected"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "chip-unread": {
+      "id": "chip-unread",
+      "componentId": "m3/filter-chip",
+      "properties": {
+        "selected": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "label": [
+          "text-17"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-17": {
+      "id": "text-17",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Unread"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "chip-starred": {
+      "id": "chip-starred",
+      "componentId": "m3/filter-chip",
+      "properties": {
+        "selected": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "label": [
+          "text-18"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-18": {
+      "id": "text-18",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Starred"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "chip-attachments": {
+      "id": "chip-attachments",
+      "componentId": "m3/filter-chip",
+      "properties": {
+        "selected": {
+          "type": "bool",
+          "value": false
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "label": [
+          "text-19"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-19": {
+      "id": "text-19",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Attachments"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "message-list": {
+      "id": "message-list",
+      "componentId": "layout/lazy-column",
+      "properties": {
+        "scrollStateKey": {
+          "type": "string",
+          "value": "gmail-inbox-list"
+        },
+        "contentPadding": {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 0,
+          "endDp": 0,
+          "bottomDp": 24
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        }
+      ],
+      "slots": {
+        "items": [
+          "msg-android",
+          "msg-figma",
+          "msg-play",
+          "msg-stack",
+          "msg-notion",
+          "msg-docs",
+          "msg-trello",
+          "msg-linkedin"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-android": {
+      "id": "msg-android",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "colorToken",
+            "value": "surfaceContainerLow"
+          }
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-android-avatar",
+          "msg-android-body",
+          "icon-25"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-android-avatar": {
+      "id": "msg-android-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF1A73E8"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-20"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-20": {
+      "id": "text-20",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "A"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-android-body": {
+      "id": "msg-android-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-android-head",
+          "text-23",
+          "text-24"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-android-head": {
+      "id": "msg-android-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-21",
+          "text-22"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-21": {
+      "id": "text-21",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Android Developers"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "bold"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-22": {
+      "id": "text-22",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "9:41"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "primary"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-23": {
+      "id": "text-23",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Compose 1.9 is stable"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "semiBold"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-24": {
+      "id": "text-24",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Adaptive layouts, shared element transitions and a…"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-25": {
+      "id": "icon-25",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/star"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFF9AB00"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-figma": {
+      "id": "msg-figma",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "colorToken",
+            "value": "surfaceContainerLow"
+          }
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-figma-avatar",
+          "msg-figma-body",
+          "icon-31"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-figma-avatar": {
+      "id": "msg-figma-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF9334E6"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-26"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-26": {
+      "id": "text-26",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "F"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-figma-body": {
+      "id": "msg-figma-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-figma-head",
+          "text-29",
+          "text-30"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-figma-head": {
+      "id": "msg-figma-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-27",
+          "text-28"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-27": {
+      "id": "text-27",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Figma"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "bold"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-28": {
+      "id": "text-28",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "9:12"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "primary"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-29": {
+      "id": "text-29",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "3 new comments on Inbox / Tablet"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "semiBold"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-30": {
+      "id": "text-30",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Yuri replied: “the supporting pane should keep its…"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-31": {
+      "id": "icon-31",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-play": {
+      "id": "msg-play",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-play-avatar",
+          "msg-play-body",
+          "icon-37"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-play-avatar": {
+      "id": "msg-play-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF0F9D58"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-32"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-32": {
+      "id": "text-32",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "P"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-play-body": {
+      "id": "msg-play-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-play-head",
+          "text-35",
+          "text-36"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-play-head": {
+      "id": "msg-play-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-33",
+          "text-34"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-33": {
+      "id": "text-33",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Google Play Console"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-34": {
+      "id": "text-34",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "8:30"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-35": {
+      "id": "text-35",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Your release is live on 2 tracks"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-36": {
+      "id": "text-36",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Version 4.2.0 finished rolling out to production."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-37": {
+      "id": "icon-37",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-stack": {
+      "id": "msg-stack",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-stack-avatar",
+          "msg-stack-body",
+          "icon-43"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-stack-avatar": {
+      "id": "msg-stack-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FFE37400"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-38"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-38": {
+      "id": "text-38",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "S"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-stack-body": {
+      "id": "msg-stack-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-stack-head",
+          "text-41",
+          "text-42"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-stack-head": {
+      "id": "msg-stack-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-39",
+          "text-40"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-39": {
+      "id": "text-39",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Stack Overflow"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-40": {
+      "id": "text-40",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Tue"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-41": {
+      "id": "text-41",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Weekly digest: Jetpack Compose"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-42": {
+      "id": "text-42",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Top question: how do I keep pane state across a…"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-43": {
+      "id": "icon-43",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/star"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFF9AB00"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-notion": {
+      "id": "msg-notion",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-notion-avatar",
+          "msg-notion-body",
+          "icon-49"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-notion-avatar": {
+      "id": "msg-notion-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF3C4043"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-44"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-44": {
+      "id": "text-44",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "N"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-notion-body": {
+      "id": "msg-notion-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-notion-head",
+          "text-47",
+          "text-48"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-notion-head": {
+      "id": "msg-notion-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-45",
+          "text-46"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-45": {
+      "id": "text-45",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Notion"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-46": {
+      "id": "text-46",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Tue"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-47": {
+      "id": "text-47",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Design review notes — Q3"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-48": {
+      "id": "text-48",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Meeting notes are ready for your review."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-49": {
+      "id": "icon-49",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-docs": {
+      "id": "msg-docs",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-docs-avatar",
+          "msg-docs-body",
+          "icon-55"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-docs-avatar": {
+      "id": "msg-docs-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF4285F4"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-50"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-50": {
+      "id": "text-50",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "D"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-docs-body": {
+      "id": "msg-docs-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-docs-head",
+          "text-53",
+          "text-54"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-docs-head": {
+      "id": "msg-docs-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-51",
+          "text-52"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-51": {
+      "id": "text-51",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Docs"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-52": {
+      "id": "text-52",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Mon"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-53": {
+      "id": "text-53",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "“Adaptive checklist” was shared with you"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-54": {
+      "id": "text-54",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Priya shared a document with you."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-55": {
+      "id": "icon-55",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-trello": {
+      "id": "msg-trello",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-trello-avatar",
+          "msg-trello-body",
+          "icon-61"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-trello-avatar": {
+      "id": "msg-trello-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF1B5E20"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-56"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-56": {
+      "id": "text-56",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "T"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-trello-body": {
+      "id": "msg-trello-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-trello-head",
+          "text-59",
+          "text-60"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-trello-head": {
+      "id": "msg-trello-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-57",
+          "text-58"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-57": {
+      "id": "text-57",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Trello"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-58": {
+      "id": "text-58",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Mon"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-59": {
+      "id": "text-59",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "3 cards due tomorrow"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-60": {
+      "id": "text-60",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Tablet layout spike, Icon audit, Export gate."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-61": {
+      "id": "icon-61",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-linkedin": {
+      "id": "msg-linkedin",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "top"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 16,
+          "topDp": 10,
+          "endDp": 12,
+          "bottomDp": 10
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-linkedin-avatar",
+          "msg-linkedin-body",
+          "icon-67"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-linkedin-avatar": {
+      "id": "msg-linkedin-avatar",
+      "componentId": "layout/box",
+      "properties": {
+        "contentAlignment": {
+          "type": "string",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF0B66C3"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-62"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-62": {
+      "id": "text-62",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "L"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-linkedin-body": {
+      "id": "msg-linkedin-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "msg-linkedin-head",
+          "text-65",
+          "text-66"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "msg-linkedin-head": {
+      "id": "msg-linkedin-head",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalArrangement": {
+          "type": "enum",
+          "value": "spaceBetween"
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-63",
+          "text-64"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-63": {
+      "id": "text-63",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "LinkedIn"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-64": {
+      "id": "text-64",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Sun"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelSmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-65": {
+      "id": "text-65",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "You appeared in 14 searches"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyMedium"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "normal"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-66": {
+      "id": "text-66",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "See who has been looking at your profile."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        },
+        "maxLines": {
+          "type": "int",
+          "value": 1
+        },
+        "overflow": {
+          "type": "enum",
+          "value": "ellipsis"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-67": {
+      "id": "icon-67",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Not starred"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 20
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-pane": {
+      "id": "read-pane",
+      "componentId": "layout/scaffold",
+      "properties": {},
+      "modifiers": [],
+      "slots": {
+        "topBar": [
+          "read-bar"
+        ],
+        "content": [
+          "read-body"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-bar": {
+      "id": "read-bar",
+      "componentId": "m3/center-aligned-top-app-bar",
+      "properties": {
+        "containerColor": {
+          "type": "colorToken",
+          "value": "surface"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "title": [
+          "text-68"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-68": {
+      "id": "text-68",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Inbox"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-body": {
+      "id": "read-body",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 16
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxSize"
+        },
+        {
+          "type": "verticalScroll"
+        },
+        {
+          "type": "padding",
+          "startDp": 32,
+          "topDp": 8,
+          "endDp": 32,
+          "bottomDp": 24
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-69",
+          "read-sender",
+          "read-rule",
+          "read-prose",
+          "read-attachment",
+          "read-actions"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-69": {
+      "id": "text-69",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Compose 1.9 is stable"
+        },
+        "style": {
+          "type": "enum",
+          "value": "headlineSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "medium"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-sender": {
+      "id": "read-sender",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "read-avatar",
+          "read-sender-col",
+          "read-star",
+          "read-reply",
+          "read-more"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-avatar": {
+      "id": "read-avatar",
+      "componentId": "layout/box",
+      "properties": {},
+      "modifiers": [
+        {
+          "type": "size",
+          "widthDp": 40,
+          "heightDp": 40
+        },
+        {
+          "type": "clip",
+          "shape": "20"
+        },
+        {
+          "type": "background",
+          "color": {
+            "type": "color",
+            "value": "#FF1A73E8"
+          },
+          "shape": "20"
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-70"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-70": {
+      "id": "text-70",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "A"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleMedium"
+        },
+        "color": {
+          "type": "color",
+          "value": "#FFFFFFFF"
+        },
+        "alignment": {
+          "type": "enum",
+          "value": "center"
+        },
+        "textAlign": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-sender-col": {
+      "id": "read-sender-col",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-71",
+          "text-72"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-71": {
+      "id": "text-71",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Android Developers"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        },
+        "fontWeight": {
+          "type": "enum",
+          "value": "semiBold"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-72": {
+      "id": "text-72",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "to me · 9:41 AM"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-star": {
+      "id": "read-star",
+      "componentId": "m3/icon-button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "standard"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-73"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-73": {
+      "id": "icon-73",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "outlined/starBorder"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Star"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-reply": {
+      "id": "read-reply",
+      "componentId": "m3/icon-button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "standard"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-74"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-74": {
+      "id": "icon-74",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "autoMirrored/filled/reply"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Reply"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-more": {
+      "id": "read-more",
+      "componentId": "m3/icon-button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "standard"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-75"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-75": {
+      "id": "icon-75",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/moreVert"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "More options"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-rule": {
+      "id": "read-rule",
+      "componentId": "m3/horizontal-divider",
+      "properties": {
+        "thicknessDp": {
+          "type": "float",
+          "value": 1
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "outlineVariant"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-prose": {
+      "id": "read-prose",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 12
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "children": [
+          "read-para-0",
+          "read-para-1",
+          "read-para-2",
+          "read-para-3"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-para-0": {
+      "id": "read-para-0",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Hi Yuri,"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-para-1": {
+      "id": "read-para-1",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Compose 1.9 is stable, and the adaptive layout artifacts graduate with it. ListDetailPaneScaffold and SupportingPaneScaffold now share one navigator, and NavigationSuiteScaffold picks the rail or the bar from the window size class without you branching on it yourself."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-para-2": {
+      "id": "read-para-2",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "The tablet guidance is unchanged: anchor the list near 360dp, let the detail pane take the width that is left, and keep both panes alive across a configuration change."
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-para-3": {
+      "id": "read-para-3",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Thanks,\nThe Android Developers team"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodyLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-attachment": {
+      "id": "read-attachment",
+      "componentId": "m3/card",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "outlined"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        }
+      ],
+      "slots": {
+        "content": [
+          "read-attachment-row"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-attachment-row": {
+      "id": "read-attachment-row",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        },
+        "verticalAlignment": {
+          "type": "enum",
+          "value": "center"
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 12,
+          "topDp": 12,
+          "endDp": 12,
+          "bottomDp": 12
+        }
+      ],
+      "slots": {
+        "children": [
+          "read-att-icon",
+          "read-att-col",
+          "read-att-download"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-att-icon": {
+      "id": "read-att-icon",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/pictureAsPdf"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "PDF attachment"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 32
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "primary"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-att-col": {
+      "id": "read-att-col",
+      "componentId": "layout/column",
+      "properties": {
+        "verticalSpacingDp": {
+          "type": "float",
+          "value": 2
+        }
+      },
+      "modifiers": [
+        {
+          "type": "weight",
+          "weight": 1
+        }
+      ],
+      "slots": {
+        "children": [
+          "text-76",
+          "text-77"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-76": {
+      "id": "text-76",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "adaptive-checklist.pdf"
+        },
+        "style": {
+          "type": "enum",
+          "value": "titleSmall"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-77": {
+      "id": "text-77",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "PDF · 214 KB"
+        },
+        "style": {
+          "type": "enum",
+          "value": "bodySmall"
+        },
+        "color": {
+          "type": "colorToken",
+          "value": "onSurfaceVariant"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-att-download": {
+      "id": "read-att-download",
+      "componentId": "m3/icon-button",
+      "properties": {
+        "variant": {
+          "type": "enum",
+          "value": "standard"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-78"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-78": {
+      "id": "icon-78",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "filled/download"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Download"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-actions": {
+      "id": "read-actions",
+      "componentId": "layout/row",
+      "properties": {
+        "horizontalSpacingDp": {
+          "type": "float",
+          "value": 12
+        }
+      },
+      "modifiers": [
+        {
+          "type": "fillMaxWidth"
+        },
+        {
+          "type": "padding",
+          "startDp": 0,
+          "topDp": 8,
+          "endDp": 0,
+          "bottomDp": 0
+        }
+      ],
+      "slots": {
+        "children": [
+          "read-action-reply",
+          "read-action-reply-all",
+          "read-action-forward"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-action-reply": {
+      "id": "read-action-reply",
+      "componentId": "m3/button",
+      "properties": {
+        "style": {
+          "type": "enum",
+          "value": "filledTonal"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-79",
+          "text-80"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-79": {
+      "id": "icon-79",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "autoMirrored/filled/reply"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Reply"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 18
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-80": {
+      "id": "text-80",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Reply"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-action-reply-all": {
+      "id": "read-action-reply-all",
+      "componentId": "m3/button",
+      "properties": {
+        "style": {
+          "type": "enum",
+          "value": "filledTonal"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-81",
+          "text-82"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-81": {
+      "id": "icon-81",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "autoMirrored/filled/replyAll"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Reply all"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 18
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-82": {
+      "id": "text-82",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Reply all"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "read-action-forward": {
+      "id": "read-action-forward",
+      "componentId": "m3/button",
+      "properties": {
+        "style": {
+          "type": "enum",
+          "value": "filledTonal"
+        }
+      },
+      "modifiers": [],
+      "slots": {
+        "content": [
+          "icon-83",
+          "text-84"
+        ]
+      },
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "icon-83": {
+      "id": "icon-83",
+      "componentId": "m3/icon",
+      "properties": {
+        "iconKey": {
+          "type": "enum",
+          "value": "autoMirrored/filled/forward"
+        },
+        "contentDescription": {
+          "type": "string",
+          "value": "Forward"
+        },
+        "sizeDp": {
+          "type": "float",
+          "value": 18
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    },
+    "text-84": {
+      "id": "text-84",
+      "componentId": "m3/text",
+      "properties": {
+        "text": {
+          "type": "string",
+          "value": "Forward"
+        },
+        "style": {
+          "type": "enum",
+          "value": "labelLarge"
+        }
+      },
+      "modifiers": [],
+      "slots": {},
+      "eventBindings": {},
+      "assetBindings": {}
+    }
+  },
+  "assets": {}
+}
