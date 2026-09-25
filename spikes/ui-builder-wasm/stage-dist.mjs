@@ -50,14 +50,17 @@ let archive = flag("archive");
 
 if (!archive) {
     const checkout = resolve(
-        process.env.UI_BUILDER_CHECKOUT ?? resolve(here, "../../../compose-ui-builder"),
+        process.env.UI_BUILDER_CHECKOUT ??
+            resolve(here, "../../../compose-ui-builder"),
     );
     if (!existsSync(join(checkout, "settings.gradle.kts"))) {
         throw new Error(
             `no compose-ui-builder checkout at ${checkout}. Clone yschimke/compose-ui-builder and point UI_BUILDER_CHECKOUT at it, or pass --archive=<zip>.`,
         );
     }
-    console.log(`[stage-dist] building :ui-builder-web:webArchive in ${checkout}`);
+    console.log(
+        `[stage-dist] building :ui-builder-web:webArchive in ${checkout}`,
+    );
     // build-brief when it is on PATH: a Wasm/Compose build buries its one real
     // line in thousands, and this is a long build to read the tail of.
     const brief = spawnSync("build-brief", ["--version"], { stdio: "ignore" });
@@ -72,7 +75,9 @@ if (!archive) {
             `:ui-builder-web:webArchive failed (exit ${build.status}); the spike needs that archive`,
         );
     }
-    archive = await newestArchive(join(checkout, "ui-builder-web/build/distributions"));
+    archive = await newestArchive(
+        join(checkout, "ui-builder-web/build/distributions"),
+    );
     if (!archive) {
         throw new Error(
             "the build reported success but produced no compose-preview-ui-builder-web-*.zip",

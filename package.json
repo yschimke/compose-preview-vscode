@@ -52,6 +52,12 @@
                 "aliases": [
                     "Kotlin"
                 ]
+            },
+            {
+                "id": "json",
+                "extensions": [
+                    ".uid"
+                ]
             }
         ],
         "viewsContainers": {
@@ -76,6 +82,17 @@
                     "id": "composePreview.historyPanel",
                     "name": "Preview History",
                     "visibility": "collapsed",
+                    "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "id": "composePreview.uiBuilder.layers",
+                    "name": "Design Layers",
+                    "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "type": "webview",
+                    "id": "composePreview.uiBuilder.preview",
+                    "name": "Design Preview",
                     "when": "config.composePreview.earlyFeatures.enabled"
                 }
             ]
@@ -150,6 +167,148 @@
                 "category": "Compose Preview",
                 "icon": "$(git-branch)",
                 "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.newDesign",
+                "title": "New Design…",
+                "category": "Compose UI Builder",
+                "icon": "$(add)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.openAsText",
+                "title": "Open Design as Text",
+                "category": "Compose UI Builder",
+                "icon": "$(go-to-file)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.openInEditor",
+                "title": "Open in UI Builder",
+                "category": "Compose UI Builder",
+                "icon": "$(layout)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.reload",
+                "title": "Reload UI Builder Editors",
+                "category": "Compose UI Builder",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.undo",
+                "title": "Undo",
+                "category": "Compose UI Builder",
+                "icon": "$(discard)",
+                "enablement": "composePreview.uiBuilder.action.undo.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.redo",
+                "title": "Redo",
+                "category": "Compose UI Builder",
+                "icon": "$(redo)",
+                "enablement": "composePreview.uiBuilder.action.redo.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.showComponents",
+                "title": "Show Components",
+                "category": "Compose UI Builder",
+                "icon": "$(layout-sidebar-left-off)",
+                "enablement": "composePreview.uiBuilder.action.navigator.insert.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.hideComponents",
+                "title": "Hide Components",
+                "category": "Compose UI Builder",
+                "icon": "$(layout-sidebar-left)",
+                "enablement": "composePreview.uiBuilder.action.navigator.insert.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.showProperties",
+                "title": "Show Properties",
+                "category": "Compose UI Builder",
+                "icon": "$(layout-sidebar-right-off)",
+                "enablement": "composePreview.uiBuilder.action.dock.properties.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.hideProperties",
+                "title": "Hide Properties",
+                "category": "Compose UI Builder",
+                "icon": "$(layout-sidebar-right)",
+                "enablement": "composePreview.uiBuilder.action.dock.properties.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleCode",
+                "title": "Toggle Generated Code",
+                "category": "Compose UI Builder",
+                "icon": "$(code)",
+                "enablement": "composePreview.uiBuilder.action.dock.code.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleTheme",
+                "title": "Theme",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.dock.theme.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleScreen",
+                "title": "Screen",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.dock.screen.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleIssues",
+                "title": "Issues",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.dock.issues.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleComments",
+                "title": "Comments",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.dock.comments.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleHistory",
+                "title": "History",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.dock.history.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleEditorLayers",
+                "title": "Layers (in the Editor)",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.navigator.layers.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.toggleReference",
+                "title": "Toggle Reference Image",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.reference.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.tidy",
+                "title": "Tidy to the 4dp Grid",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.overflow.tidy.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.componentPacks",
+                "title": "Component Packs…",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.overflow.packs.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.shortcuts",
+                "title": "Keyboard Shortcuts",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.overflow.shortcuts.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.help",
+                "title": "UI Builder Help",
+                "category": "Compose UI Builder",
+                "enablement": "composePreview.uiBuilder.action.overflow.help.enabled"
             }
         ],
         "menus": {
@@ -173,6 +332,16 @@
                     "command": "composePreview.history.selectSourceRef",
                     "when": "view == composePreview.historyPanel",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.newDesign",
+                    "when": "view == composePreview.uiBuilder.layers",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "view == composePreview.uiBuilder.layers && composePreview.uiBuilder.hasActiveDesign",
+                    "group": "navigation@2"
                 }
             ],
             "explorer/context": [
@@ -190,6 +359,184 @@
                 {
                     "command": "composePreview.history.selectSourceRef",
                     "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "composePreview.uiBuilder.hasActiveDesign"
+                },
+                {
+                    "command": "composePreview.uiBuilder.undo",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.redo",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.showComponents",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.hideComponents",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.showProperties",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.hideProperties",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleCode",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleTheme",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleScreen",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleIssues",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleComments",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleHistory",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleEditorLayers",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleReference",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.tidy",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.componentPacks",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.shortcuts",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                },
+                {
+                    "command": "composePreview.uiBuilder.help",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder",
+                    "group": "navigation@99"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openInEditor",
+                    "when": "resourceExtname == .uid && !activeCustomEditorId && config.composePreview.earlyFeatures.enabled",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.undo",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.undo.present",
+                    "group": "navigation@10"
+                },
+                {
+                    "command": "composePreview.uiBuilder.redo",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.redo.present",
+                    "group": "navigation@11"
+                },
+                {
+                    "command": "composePreview.uiBuilder.showComponents",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.navigator.insert.present && !composePreview.uiBuilder.action.navigator.insert.checked",
+                    "group": "navigation@12"
+                },
+                {
+                    "command": "composePreview.uiBuilder.hideComponents",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.navigator.insert.present && composePreview.uiBuilder.action.navigator.insert.checked",
+                    "group": "navigation@13"
+                },
+                {
+                    "command": "composePreview.uiBuilder.showProperties",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.properties.present && !composePreview.uiBuilder.action.dock.properties.checked",
+                    "group": "navigation@14"
+                },
+                {
+                    "command": "composePreview.uiBuilder.hideProperties",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.properties.present && composePreview.uiBuilder.action.dock.properties.checked",
+                    "group": "navigation@15"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleCode",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.code.present",
+                    "group": "navigation@16"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleTheme",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.theme.present",
+                    "group": "ui-builder@7"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleScreen",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.screen.present",
+                    "group": "ui-builder@8"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleIssues",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.issues.present",
+                    "group": "ui-builder@9"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleComments",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.comments.present",
+                    "group": "ui-builder@10"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleHistory",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.dock.history.present",
+                    "group": "ui-builder@11"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleEditorLayers",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.navigator.layers.present",
+                    "group": "ui-builder@12"
+                },
+                {
+                    "command": "composePreview.uiBuilder.toggleReference",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.reference.present",
+                    "group": "ui-builder@13"
+                },
+                {
+                    "command": "composePreview.uiBuilder.tidy",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.overflow.tidy.present",
+                    "group": "ui-builder@14"
+                },
+                {
+                    "command": "composePreview.uiBuilder.componentPacks",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.overflow.packs.present",
+                    "group": "ui-builder@15"
+                },
+                {
+                    "command": "composePreview.uiBuilder.shortcuts",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.overflow.shortcuts.present",
+                    "group": "ui-builder@16"
+                },
+                {
+                    "command": "composePreview.uiBuilder.help",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder && composePreview.uiBuilder.action.overflow.help.present",
+                    "group": "ui-builder@17"
                 }
             ]
         },
@@ -261,9 +608,33 @@
                         "Show every line from Gradle and the daemon, including UP-TO-DATE tasks, configuration-cache bookkeeping, kotlin-dsl warnings, and the full Roborazzi ActionBar block per capture."
                     ],
                     "description": "Verbosity for the \"Compose Preview\" output channel. Default `normal` strips the per-task UP-TO-DATE/SKIPPED noise, configuration-cache bookkeeping, and dedupes the repeated Roborazzi ActionBar warnings. Switch to `verbose` to debug Gradle/daemon issues; `quiet` to keep only errors and the BUILD SUCCESSFUL/FAILED line."
+                },
+                "composePreview.uiBuilder.webDistPath": {
+                    "type": "string",
+                    "default": "",
+                    "scope": "machine-overridable",
+                    "markdownDescription": "**Early access.** The Compose UI Builder web editor that `.uid` designs open in: an unpacked archive directory, or the `compose-preview-ui-builder-web-*.zip` that a [compose-ui-builder](https://github.com/yschimke/compose-ui-builder) checkout's `./gradlew :ui-builder-web:webArchive` writes to `ui-builder-web/build/distributions/`. Empty (default) downloads the release the extension pins. Run `Compose UI Builder: Reload UI Builder Editors` after rebuilding."
                 }
             }
-        }
+        },
+        "customEditors": [
+            {
+                "viewType": "composePreview.uiBuilder",
+                "displayName": "Compose UI Builder",
+                "selector": [
+                    {
+                        "filenamePattern": "*.uid"
+                    }
+                ],
+                "priority": "default"
+            }
+        ],
+        "viewsWelcome": [
+            {
+                "view": "composePreview.uiBuilder.layers",
+                "contents": "Open a Compose UI Builder design (.uid) to see its layers here.\n[New Design…](command:composePreview.uiBuilder.newDesign)"
+            }
+        ]
     },
     "scripts": {
         "compile": "npm run compile:host && npm run compile:webview",

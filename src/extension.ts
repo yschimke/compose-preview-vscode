@@ -21,6 +21,7 @@ import {
 } from "./spatialRenderLoader";
 import { BundleViewerPanel } from "./bundleViewerPanel";
 import { FontBrowserPanel } from "./fontBrowserPanel";
+import { registerUiBuilder } from "./uiBuilder";
 import { isLikelyBundle } from "./bundleFormat";
 import { PreviewRegistry } from "./previewRegistry";
 import { PreviewGutterDecorations } from "./previewGutterDecorations";
@@ -1044,6 +1045,10 @@ export async function activate(
     outputChannel.appendLine(
         `[startup] compose-preview v${extVersion} loaded from ${extPath}`,
     );
+
+    // Registered before anything Gradle-shaped: a `.uid` design needs no
+    // Gradle build, no plugin and no daemon to open in the UI Builder.
+    registerUiBuilder(context, (msg) => outputChannel.appendLine(msg));
 
     const isTestMode = process.env.COMPOSE_PREVIEW_TEST_MODE === "1";
 
