@@ -8,8 +8,8 @@ trains:
 
 | Train | Repository | What it publishes | Latest seen here |
 | --- | --- | --- | --- |
-| `2.x` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) | the Gradle plugin, the CLI, `render-host`, `daemon-launch-builder` — `compose-ai-tools-bom` | `2.18.1` (the pin) |
-| `3.x` | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) | the daemons, the three renderers, `preview-annotations`, the `data-*` extractors — `compose-preview-daemon-bom` | `3.8.0` (what the pin resolves) |
+| `2.x` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) | the Gradle plugin, the CLI, `render-host`, `daemon-launch-builder` — `compose-ai-tools-bom` | `2.25.0` (the pin) |
+| `3.x` | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) | the daemons, the three renderers, `preview-annotations`, the `data-*` extractors — `compose-preview-daemon-bom` | `3.8.3` (what the pin resolves) |
 | `3.x` | [`compose-preview-contracts`](https://github.com/yschimke/compose-preview-contracts) | the wire contracts — `compose-preview-contracts-bom` | via the plugin |
 
 The version numbers are unrelated to each other and to this extension's. What ties
