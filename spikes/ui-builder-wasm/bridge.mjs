@@ -23,6 +23,7 @@
 //                   [--edit-at=x,y]   click a layer row there, delete it, undo it
 //                   [--role=preview]  the Design Preview view instead of the editor
 //                   [--select=<nodeId>] select a layer from the host side
+//                   [--invoke=id,id]  run the editor's toolbar/rail controls the host draws
 //
 // `CHROMIUM_PATH` picks the browser. Playwright's headless shell is the one
 // that paints in a software-GL container (it is what compose-preview-server's
@@ -54,6 +55,7 @@ const timeout = Number(flag("timeout", "180000"));
 const editAt = flag("edit-at");
 const role = flag("role", "editor");
 const selectNode = flag("select");
+const invokeIds = flag("invoke", "").split(",").filter(Boolean);
 const outDir = resolve(here, "out/bridge");
 await mkdir(outDir, { recursive: true });
 
@@ -245,6 +247,43 @@ try {
     await tab.waitForTimeout(3000);
     await tab.screenshot({ path: join(outDir, "editor.png") });
     console.log(`${at()} screenshot ${join(outDir, "editor.png")}`);
+
+    const chrome = posted
+        .filter((m) => m.type === "compose-ui-builder/chrome")
+        .at(-1);
+    if (chrome) {
+        console.log(`${at()} chrome the host draws:`);
+        for (const a of chrome.actions) {
+            console.log(
+                `    ${a.group.padEnd(9)} ${a.id.padEnd(22)} ${a.label}${a.enabled ? "" : " (disabled)"}${a.checked === null ? "" : a.checked ? " [on]" : " [off]"}${a.badge ? ` (${a.badge})` : ""}`,
+            );
+        }
+    }
+    for (const id of invokeIds) {
+        const mark = posted.length;
+        await tab.evaluate(
+            (id) =>
+                window.postMessage(
+                    { type: "compose-ui-builder/invoke", id },
+                    "*",
+                ),
+            id,
+        );
+        await tab.waitForTimeout(1500);
+        const after = posted
+            .slice(mark)
+            .filter((m) => m.type === "compose-ui-builder/chrome")
+            .at(-1);
+        const error = posted
+            .slice(mark)
+            .find((m) => m.type === "compose-ui-builder/error");
+        if (error) throw new Error(`invoke ${id}: ${error.message}`);
+        const state = after?.actions.find((a) => a.id === id);
+        console.log(
+            `${at()} invoked ${id}${state && state.checked !== null ? ` -> ${state.checked ? "on" : "off"}` : ""}`,
+        );
+        await tab.screenshot({ path: join(outDir, `invoke-${id}.png`) });
+    }
 
     if (selectNode) {
         // The host's layer tree selecting a node: the editor must select it and say so.

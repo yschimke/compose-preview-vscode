@@ -17,6 +17,13 @@ import {
     type DesignDocument,
 } from "../uiBuilderDesign";
 import { resolveUiBuilderDist, UiBuilderDistError } from "../uiBuilderDist";
+import {
+    actionContextValues,
+    commandEnablement,
+    menuGroup,
+    menuWhen,
+    UI_BUILDER_CHROME_COMMANDS,
+} from "../uiBuilderChrome";
 import { uiBuilderCsp, uiBuilderWebviewHtml } from "../uiBuilderHtml";
 import { UiBuilderDocumentSync } from "../uiBuilderSync";
 import { isSafeEntryName, readZip } from "../uiBuilderZip";
@@ -442,5 +449,110 @@ describe("UiBuilderDocumentSync", () => {
         h.sync.editorChanged(edited("refused"));
         await h.finishApply(false);
         assert.match(h.statuses.at(-1) ?? "", /refused/);
+    });
+});
+
+describe("uiBuilderChrome", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pkg = require("../../package.json") as {
+        contributes: {
+            commands: { command: string; icon?: string; enablement?: string }[];
+            menus: Record<
+                string,
+                { command: string; when?: string; group?: string }[]
+            >;
+        };
+    };
+
+    it("declares every chrome command in package.json, as the table says", () => {
+        for (const entry of UI_BUILDER_CHROME_COMMANDS) {
+            const declared = pkg.contributes.commands.find(
+                (c) => c.command === entry.command,
+            );
+            assert.ok(declared, `${entry.command} is not declared`);
+            assert.strictEqual(declared.icon, entry.icon);
+            assert.strictEqual(declared.enablement, commandEnablement(entry));
+            const menu = pkg.contributes.menus["editor/title"].find(
+                (m) => m.command === entry.command,
+            );
+            assert.ok(menu, `${entry.command} has no editor/title entry`);
+            assert.strictEqual(menu.when, menuWhen(entry));
+            assert.strictEqual(menu.group, menuGroup(entry));
+        }
+    });
+
+    it("shows one of each show/hide pair, by the panel's state", () => {
+        const show = UI_BUILDER_CHROME_COMMANDS.find(
+            (c) => c.command === "composePreview.uiBuilder.showProperties",
+        )!;
+        const hide = UI_BUILDER_CHROME_COMMANDS.find(
+            (c) => c.command === "composePreview.uiBuilder.hideProperties",
+        )!;
+        assert.match(
+            menuWhen(show),
+            /!composePreview\.uiBuilder\.action\.dock\.properties\.checked/,
+        );
+        assert.match(
+            menuWhen(hide),
+            /&& composePreview\.uiBuilder\.action\.dock\.properties\.checked$/,
+        );
+    });
+
+    it("derives present/enabled/checked keys, and turns off what the editor stopped publishing", () => {
+        const values = actionContextValues([
+            {
+                id: "undo",
+                label: "Undo",
+                group: "toolbar",
+                icon: "Undo",
+                enabled: false,
+                checked: null,
+                badge: 0,
+                shortcut: "",
+            },
+            {
+                id: "dock.properties",
+                label: "Properties",
+                group: "dock",
+                icon: "Properties",
+                enabled: true,
+                checked: true,
+                badge: 0,
+                shortcut: "",
+            },
+            {
+                id: "some.future.action",
+                label: "?",
+                group: "overflow",
+                icon: "More",
+                enabled: true,
+                checked: null,
+                badge: 0,
+                shortcut: "",
+            },
+        ]);
+        assert.strictEqual(
+            values.get("composePreview.uiBuilder.action.undo.present"),
+            true,
+        );
+        assert.strictEqual(
+            values.get("composePreview.uiBuilder.action.undo.enabled"),
+            false,
+        );
+        assert.strictEqual(
+            values.get(
+                "composePreview.uiBuilder.action.dock.properties.checked",
+            ),
+            true,
+        );
+        assert.strictEqual(
+            values.get("composePreview.uiBuilder.action.reference.present"),
+            false,
+        );
+        assert.ok(![...values.keys()].some((k) => k.includes("some.future")));
+        assert.deepStrictEqual(
+            [...actionContextValues(undefined).values()].filter(Boolean),
+            [],
+        );
     });
 });

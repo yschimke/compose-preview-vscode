@@ -35,6 +35,10 @@ import {
     type UiBuilderRole,
 } from "./uiBuilderHtml";
 import { UiBuilderDocumentSync } from "./uiBuilderSync";
+import {
+    actionContextValues,
+    type UiBuilderHostAction,
+} from "./uiBuilderChrome";
 
 export const UI_BUILDER_VIEW_TYPE = "composePreview.uiBuilder";
 const HAS_ACTIVE_DESIGN_CONTEXT = "composePreview.uiBuilder.hasActiveDesign";
@@ -44,6 +48,7 @@ type FromEditor =
     | { type: "compose-ui-builder/ready" }
     | { type: "compose-ui-builder/changed"; document: string }
     | { type: "compose-ui-builder/selection"; nodeId: string }
+    | { type: "compose-ui-builder/chrome"; actions: UiBuilderHostAction[] }
     | { type: "compose-ui-builder/error"; message: string }
     | { type: "compose-ui-builder/open-link"; url: string }
     | { type: typeof UI_BUILDER_PAGE_ERROR_MESSAGE; message: string }
@@ -215,6 +220,8 @@ export class UiBuilderSession implements vscode.Disposable {
 
     /** The last readable design in the document. */
     design: DesignDocument | undefined;
+    /** The toolbar and rail controls the editor asked VS Code to draw. */
+    chrome: UiBuilderHostAction[] = [];
     selectedNodeId: string | undefined;
     readonly sync: UiBuilderDocumentSync;
     private readonly disposables: vscode.Disposable[] = [];
@@ -277,6 +284,14 @@ export class UiBuilderSession implements vscode.Disposable {
         if (nodeId === this.selectedNodeId) return;
         this.selectedNodeId = nodeId;
         this.selectionChanged.fire(nodeId);
+    }
+
+    /** Runs one of the editor's own controls, drawn as VS Code chrome. */
+    invoke(actionId: string): void {
+        void this.panel.webview.postMessage({
+            type: "compose-ui-builder/invoke",
+            id: actionId,
+        });
     }
 
     /** Selects [nodeId] in the editor, as if its layer had been clicked there. */
@@ -372,6 +387,10 @@ export class UiBuilderEditorProvider
                 break;
             case "compose-ui-builder/selection":
                 session.setSelection(message.nodeId || undefined);
+                break;
+            case "compose-ui-builder/chrome":
+                session.chrome = message.actions;
+                if (this.activeSession === session) this.publishChrome(session);
                 break;
             case "compose-ui-builder/error":
                 this.host.log(
@@ -484,6 +503,20 @@ export class UiBuilderEditorProvider
         this.activeSession?.select(nodeId);
     }
 
+    invokeInActive(actionId: string): void {
+        this.activeSession?.invoke(actionId);
+    }
+
+    /**
+     * Shows, enables and flips the editor-title actions for [session]'s
+     * editor, or clears them all when no UI Builder editor is focused.
+     */
+    private publishChrome(session: UiBuilderSession | undefined): void {
+        for (const [key, value] of actionContextValues(session?.chrome)) {
+            void vscode.commands.executeCommand("setContext", key, value);
+        }
+    }
+
     reloadAll(): void {
         this.host.reset();
         for (const session of this.sessions) void this.load(session);
@@ -497,6 +530,7 @@ export class UiBuilderEditorProvider
             HAS_ACTIVE_DESIGN_CONTEXT,
             !!session,
         );
+        this.publishChrome(session);
         this.activeChanged.fire(session);
     }
 }

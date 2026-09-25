@@ -7,6 +7,7 @@ import {
     UiBuilderEditorProvider,
     UiBuilderHost,
 } from "./uiBuilderEditorProvider";
+import { UI_BUILDER_CHROME_COMMANDS } from "./uiBuilderChrome";
 import {
     UI_BUILDER_LAYERS_VIEW,
     UI_BUILDER_PREVIEW_VIEW,
@@ -88,6 +89,12 @@ export function registerUiBuilder(
         ),
         vscode.commands.registerCommand("composePreview.uiBuilder.reload", () =>
             editors.reloadAll(),
+        ),
+        // The editor's own toolbar and rails, as editor-title actions.
+        ...UI_BUILDER_CHROME_COMMANDS.map((entry) =>
+            vscode.commands.registerCommand(entry.command, () =>
+                editors.invokeInActive(entry.actionId),
+            ),
         ),
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (
