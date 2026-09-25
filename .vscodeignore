@@ -25,6 +25,7 @@ scripts/**
 docs/**
 protocol-fixtures/**
 spatial-fixtures/**
+spikes/**
 AGENTS.md
 CLAUDE.md
 release-please-config.json

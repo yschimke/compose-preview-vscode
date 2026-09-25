@@ -52,6 +52,12 @@
                 "aliases": [
                     "Kotlin"
                 ]
+            },
+            {
+                "id": "json",
+                "extensions": [
+                    ".uid"
+                ]
             }
         ],
         "viewsContainers": {
@@ -76,6 +82,17 @@
                     "id": "composePreview.historyPanel",
                     "name": "Preview History",
                     "visibility": "collapsed",
+                    "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "id": "composePreview.uiBuilder.layers",
+                    "name": "Design Layers",
+                    "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "type": "webview",
+                    "id": "composePreview.uiBuilder.preview",
+                    "name": "Design Preview",
                     "when": "config.composePreview.earlyFeatures.enabled"
                 }
             ]
@@ -150,6 +167,33 @@
                 "category": "Compose Preview",
                 "icon": "$(git-branch)",
                 "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.newDesign",
+                "title": "New Design…",
+                "category": "Compose UI Builder",
+                "icon": "$(add)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.openAsText",
+                "title": "Open Design as Text",
+                "category": "Compose UI Builder",
+                "icon": "$(go-to-file)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.openInEditor",
+                "title": "Open in UI Builder",
+                "category": "Compose UI Builder",
+                "icon": "$(layout)",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
+            },
+            {
+                "command": "composePreview.uiBuilder.reload",
+                "title": "Reload UI Builder Editors",
+                "category": "Compose UI Builder",
+                "enablement": "config.composePreview.earlyFeatures.enabled"
             }
         ],
         "menus": {
@@ -173,6 +217,16 @@
                     "command": "composePreview.history.selectSourceRef",
                     "when": "view == composePreview.historyPanel",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.newDesign",
+                    "when": "view == composePreview.uiBuilder.layers",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "view == composePreview.uiBuilder.layers && composePreview.uiBuilder.hasActiveDesign",
+                    "group": "navigation@2"
                 }
             ],
             "explorer/context": [
@@ -190,6 +244,22 @@
                 {
                     "command": "composePreview.history.selectSourceRef",
                     "when": "config.composePreview.earlyFeatures.enabled"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "composePreview.uiBuilder.hasActiveDesign"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "composePreview.uiBuilder.openAsText",
+                    "when": "activeCustomEditorId == composePreview.uiBuilder",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "composePreview.uiBuilder.openInEditor",
+                    "when": "resourceExtname == .uid && !activeCustomEditorId && config.composePreview.earlyFeatures.enabled",
+                    "group": "navigation@1"
                 }
             ]
         },
@@ -261,9 +331,33 @@
                         "Show every line from Gradle and the daemon, including UP-TO-DATE tasks, configuration-cache bookkeeping, kotlin-dsl warnings, and the full Roborazzi ActionBar block per capture."
                     ],
                     "description": "Verbosity for the \"Compose Preview\" output channel. Default `normal` strips the per-task UP-TO-DATE/SKIPPED noise, configuration-cache bookkeeping, and dedupes the repeated Roborazzi ActionBar warnings. Switch to `verbose` to debug Gradle/daemon issues; `quiet` to keep only errors and the BUILD SUCCESSFUL/FAILED line."
+                },
+                "composePreview.uiBuilder.webDistPath": {
+                    "type": "string",
+                    "default": "",
+                    "scope": "machine-overridable",
+                    "markdownDescription": "**Early access.** The Compose UI Builder web editor that `.uid` designs open in: an unpacked archive directory, or the `compose-preview-ui-builder-web-*.zip` that a [compose-ui-builder](https://github.com/yschimke/compose-ui-builder) checkout's `./gradlew :ui-builder-web:webArchive` writes to `ui-builder-web/build/distributions/`. Empty (default) downloads the release the extension pins. Run `Compose UI Builder: Reload UI Builder Editors` after rebuilding."
                 }
             }
-        }
+        },
+        "customEditors": [
+            {
+                "viewType": "composePreview.uiBuilder",
+                "displayName": "Compose UI Builder",
+                "selector": [
+                    {
+                        "filenamePattern": "*.uid"
+                    }
+                ],
+                "priority": "default"
+            }
+        ],
+        "viewsWelcome": [
+            {
+                "view": "composePreview.uiBuilder.layers",
+                "contents": "Open a Compose UI Builder design (.uid) to see its layers here.\n[New Design…](command:composePreview.uiBuilder.newDesign)"
+            }
+        ]
     },
     "scripts": {
         "compile": "npm run compile:host && npm run compile:webview",

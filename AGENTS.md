@@ -126,6 +126,34 @@ plugin's version. Do not hand-edit it. Bump the pins, then run
 `scripts/sync-protocol-fixtures.sh`, and commit them together — the `Protocol
 Fixtures` workflow checks them against each other and fails on any difference.
 
+## The UI Builder (early access)
+
+`.uid` files open in a custom text editor running the
+[compose-ui-builder](https://github.com/yschimke/compose-ui-builder) Kotlin/Wasm
+editor, split the way that repository's IntelliJ plugin splits it: the **editor**
+tab is the canvas and inspector, and two **views** in the Compose Preview side bar
+follow the focused design — Design Layers (a native tree built from the document)
+and Design Preview (the same Wasm archive in its `preview` role). Behind
+`composePreview.earlyFeatures.enabled`. Start at `src/uiBuilderEditorProvider.ts`.
+
+- **The TextDocument is the design.** Editor edits become WorkspaceEdits
+  (`src/uiBuilderSync.ts`), so dirty state, save, revert, hot exit and SCM diffs are
+  VS Code's. The editor and this extension speak compose-ui-builder's host bridge
+  (`HostBridgeApp.kt` there), versioned by `hostBridge` in the archive's
+  `ui-builder-web.json`; `SUPPORTED_HOST_BRIDGE` in `src/uiBuilderDist.ts` is this
+  side of that contract.
+- **The archive is not in the VSIX.** It is ~20 MB zipped and ~90 MB unpacked. It
+  comes from `composePreview.uiBuilder.webDistPath` (a checkout's
+  `:ui-builder-web:webArchive` zip, or an unpacked directory), else the release
+  pinned in `src/uiBuilderPin.ts`, downloaded once and checked against its sha256.
+  Bump that pin like `plugin-version.json`: in its own change, with the asset's
+  sha256. A release older than the bridge is refused with a message naming the
+  setting.
+- **Testing it without VS Code:** `spikes/ui-builder-wasm/bridge.mjs` drives the
+  extension's real page in Chromium across two origins and plays the host's side of
+  the bridge. Use Playwright's headless shell; a full Chromium under
+  `--use-angle=swiftshader` never paints in a software-GL container.
+
 ## Testing posture
 
 `npm run test:e2e-external` is the extension's end-to-end suite. It drives a real
