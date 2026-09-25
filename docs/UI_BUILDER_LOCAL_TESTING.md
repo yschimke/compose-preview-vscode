@@ -20,8 +20,12 @@ reason, never as passed.
 
 ## Setup
 
-You need Node 22+, a VS Code (stable) on `PATH` as `code`, and network access to
-`github.com` (for the editor download, ~20 MB, once).
+You need Node 22+, a VS Code (stable) on `PATH` as `code`, and network access to:
+
+- `github.com`, for the clone and the editor download (~20 MB, once);
+- the npm registry (`registry.npmjs.org`), for `npm ci`;
+- the VS Code Marketplace, to install the extension's `vscjava.vscode-gradle`
+  dependency.
 
 ```sh
 git clone https://github.com/yschimke/compose-preview-vscode.git
@@ -72,8 +76,14 @@ the UI Builder tab focused, and look at its Console.
 | `gmail-tablet.uid` | Material 3 | 164 | a real screen: layers tree depth, preview, performance |
 | `home-wear.uid` | Wear M3 | 55 | a second catalog |
 
-They come from compose-ui-builder's fixtures. Before you edit them, copy them
-somewhere scratch (or `git restore` afterwards); do not commit edits to them.
+They come from compose-ui-builder's fixtures. Do not edit them directly. Make
+scratch copies beside them and edit those; the originals stay untouched for
+comparison:
+
+```sh
+cd docs/ui-builder-testing
+for f in *.uid; do cp "$f" "scratch-$f"; done   # untracked; delete when done
+```
 
 ## Checklist
 
@@ -107,13 +117,13 @@ With `state-actions.uid` focused:
 
 ### C. The design is the file
 
-Use a scratch copy of `state-actions.uid`.
+Use `scratch-state-actions.uid`.
 
 | ID | Do | Expect |
 | --- | --- | --- |
 | C1 | Select the progress indicator on the canvas and press Backspace. | It disappears, the tab shows the **dirty dot**, and **Undo** in the title bar enables. |
 | C2 | Click **Undo** in the title bar, then Redo. | The progress indicator comes back, then goes again. |
-| C3 | Save (Ctrl/Cmd+S) with the canvas focused. | The dirty dot clears. `git diff` on the file shows the change. The first save may reformat the whole file into the editor's JSON layout; that is expected. |
+| C3 | Save (Ctrl/Cmd+S) with the canvas focused. | The dirty dot clears. `git diff --no-index state-actions.uid scratch-state-actions.uid` shows the change. Plain `git diff` does not, because the scratch copy is untracked. The first save may reformat the whole file into the editor's JSON layout; that is expected. |
 | C4 | Run **Compose UI Builder: Open Design as Text** (title-bar button). | The JSON opens beside the canvas. |
 | C5 | In the JSON, change the button's `"Ready"` text to `"Go"`. | About a quarter of a second after you stop typing, the canvas shows "Go". |
 | C6 | Make the JSON invalid (delete a closing brace). | A warning banner over the canvas: "Showing the last valid version: the file is not valid JSON…". The canvas keeps the last good design. |
@@ -128,7 +138,7 @@ Open the **Compose Preview** side bar (its activity-bar icon).
 
 | ID | Do | Expect |
 | --- | --- | --- |
-| D1 | Focus `gmail-tablet.uid`. | **Design Layers** shows the design's tree, with the title as its description and slots as separate rows where a node has several. 📸 |
+| D1 | Focus `scratch-gmail-tablet.uid`. | **Design Layers** shows the design's tree, with the title as its description and slots as separate rows where a node has several. 📸 |
 | D2 | Click a row deep in the tree. | That layer is selected on the canvas and Properties shows it. |
 | D3 | Click a different element on the canvas. | The tree reveals and selects its row. |
 | D4 | Delete a layer on the canvas. | It leaves the tree. |
@@ -138,9 +148,9 @@ Open the **Compose Preview** side bar (its activity-bar icon).
 
 | ID | Do | Expect |
 | --- | --- | --- |
-| E1 | Expand **Design Preview** in the Compose Preview side bar with `gmail-tablet.uid` focused. | The design rendered on its own, labelled "Current · 1280×800dp", with no editor controls. 📸 |
+| E1 | Expand **Design Preview** in the Compose Preview side bar with `scratch-gmail-tablet.uid` focused. | The design rendered on its own, labelled "Current · 1280×800dp", with no editor controls. 📸 |
 | E2 | Edit on the canvas, for example delete a list row. | The preview follows within about a second. |
-| E3 | Switch focus between `gmail-tablet.uid` and `home-wear.uid`. | The preview follows the focused design. |
+| E3 | Switch focus between `scratch-gmail-tablet.uid` and `scratch-home-wear.uid`. | The preview follows the focused design. |
 
 ### F. Theme
 
