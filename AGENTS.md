@@ -149,6 +149,11 @@ and Design Preview (the same Wasm archive in its `preview` role). Behind
   Bump that pin like `plugin-version.json`: in its own change, with the asset's
   sha256. A release older than the bridge is refused with a message naming the
   setting.
+- **Testing it in a real VS Code:** [`docs/UI_BUILDER_LOCAL_TESTING.md`](docs/UI_BUILDER_LOCAL_TESTING.md)
+  is a checklist for an agent or person with a desktop VS Code, with sample designs
+  in `docs/ui-builder-testing/`. It covers what no automated suite here does yet:
+  the webview origin, VS Code's title-bar actions, the two views, save/revert and
+  a live theme switch.
 - **Testing it without VS Code:** `spikes/ui-builder-wasm/bridge.mjs` drives the
   extension's real page in Chromium across two origins and plays the host's side of
   the bridge. Use Playwright's headless shell; a full Chromium under
