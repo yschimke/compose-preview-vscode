@@ -85,6 +85,34 @@ cd docs/ui-builder-testing
 for f in *.uid; do cp "$f" "scratch-$f"; done   # untracked; delete when done
 ```
 
+### Driving it without a mouse
+
+An agent with no mouse or keyboard automation can still run nearly every check.
+The first report did it this way ([#38](https://github.com/yschimke/compose-preview-vscode/pull/38)):
+
+- Launch a real VS Code through `@vscode/test-electron` with the built
+  extension side-loaded and `--remote-debugging-port`, then drive it over the
+  Chrome DevTools Protocol. File opens, saves, reverts and the text-editor half
+  go through the `vscode` API; VS Code's own buttons, menus, the Layers tree
+  and quick picks take real DOM clicks.
+- **Every `vscode-webview://` target has two execution contexts.** The outer one
+  is VS Code's wrapper and its body is empty; the extension's page is in a
+  second, nested context. `Runtime.evaluate` without a `contextId` lands in the
+  wrapper, which makes webview checks fail for the wrong reason. List the
+  contexts (`Runtime.executionContextCreated`) and target the one whose
+  `document` has `#composeApp`.
+- **The canvas can be clicked too.** `Input.dispatchMouseEvent` on the webview's
+  target reaches the Compose canvas like a real click. The page publishes what
+  the editor thinks is selected: read
+  `globalThis.__uiBuilderEditor.selectedNodeId` in the page context to verify
+  C1, D3 and D4 rather than skipping them. When hit-testing a node is awkward,
+  select it through the Design Layers tree (D2), then send Backspace with
+  `Input.dispatchKeyEvent`; that still runs C1's delete through the canvas.
+- **The native save dialog is out of reach.** G1 and G2 go through **New
+  Design…**, whose OS save dialog is invisible to CDP. G5 exercises the same
+  seeding path through the empty-file quick pick instead; report G1 and G2 as
+  *not run* and run G5.
+
 ## Checklist
 
 Each check has an ID, what to do, and what should happen. Take a screenshot where
@@ -168,6 +196,7 @@ Open the **Compose Preview** side bar (its activity-bar icon).
 | G2 | Same for "Material 3 — blank screen" and "Wear widget — large". | Each opens its template. |
 | G3 | Open `home-wear.uid`. | The Wear design renders (a watch-sized, tall list of device rows). 📸 |
 | G4 | Create an empty file `empty.uid` and open it. | A quick pick asks which template to start from. Escape leaves a banner saying the file is empty. |
+| G5 | Create `empty-wear.uid`, open it, and pick "Wear OS — blank screen" in the quick pick. | The same seeding as G1 without the save dialog: the Wear screen appears and the file is dirty with the template's JSON. Save works. |
 
 ### H. Local editor builds (optional)
 
