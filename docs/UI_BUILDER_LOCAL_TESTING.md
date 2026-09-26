@@ -162,7 +162,7 @@ Use `scratch-state-actions.uid`.
 
 ### D. Design Layers view
 
-Open the **Compose Preview** side bar (its activity-bar icon).
+Open the **Compose UI Builder** side bar (its activity-bar icon).
 
 | ID | Do | Expect |
 | --- | --- | --- |
@@ -176,7 +176,7 @@ Open the **Compose Preview** side bar (its activity-bar icon).
 
 | ID | Do | Expect |
 | --- | --- | --- |
-| E1 | Expand **Design Preview** in the Compose Preview side bar with `scratch-gmail-tablet.uid` focused. | The design rendered on its own, labelled "Current · 1280×800dp", with no editor controls. 📸 |
+| E1 | Expand **Design Preview** in the Compose UI Builder side bar with `scratch-gmail-tablet.uid` focused. | The design rendered on its own, labelled "Current · 1280×800dp", with no editor controls. 📸 |
 | E2 | Edit on the canvas, for example delete a list row. | The preview follows within about a second. |
 | E3 | Switch focus between `scratch-gmail-tablet.uid` and `scratch-home-wear.uid`. | The preview follows the focused design. |
 

@@ -567,8 +567,38 @@ describe("uiBuilderChrome", () => {
                 string,
                 { command: string; when?: string; group?: string }[]
             >;
+            viewsContainers: {
+                activitybar: { id: string; title: string; when?: string }[];
+            };
+            views: Record<string, { id: string }[]>;
         };
     };
+
+    it("keeps UI Builder views out of the Compose Preview container", () => {
+        const previewViews = pkg.contributes.views["compose-preview"].map(
+            (view) => view.id,
+        );
+        assert.deepStrictEqual(previewViews, [
+            "composePreview.panel",
+            "composePreview.historyPanel",
+        ]);
+        assert.deepStrictEqual(
+            pkg.contributes.views["compose-ui-builder"].map((view) => view.id),
+            [
+                "composePreview.uiBuilder.layers",
+                "composePreview.uiBuilder.preview",
+            ],
+        );
+        assert.ok(
+            pkg.contributes.viewsContainers.activitybar.some(
+                (container) =>
+                    container.id === "compose-ui-builder" &&
+                    container.when ===
+                        "config.composePreview.earlyFeatures.enabled",
+            ),
+            "expected an early-access Compose UI Builder activity-bar container",
+        );
+    });
 
     it("declares every chrome command in package.json, as the table says", () => {
         for (const entry of UI_BUILDER_CHROME_COMMANDS) {

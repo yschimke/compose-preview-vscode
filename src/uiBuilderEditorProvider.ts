@@ -2,7 +2,7 @@
 //
 // - **Editor** — `.uid` files open in a custom text editor running the
 //   compose-ui-builder Wasm editor (canvas + inspector). This file.
-// - **Views** — beside it in the Compose Preview side bar, following whichever
+// - **Views** — beside it in the Compose UI Builder side bar, following whichever
 //   design is active: a native Layers tree (uiBuilderLayersView.ts) and the
 //   Design Preview, the same editor archive with only its Preview pane
 //   (uiBuilderPreviewView.ts). IntelliJ's equivalents are the structure view
@@ -474,21 +474,25 @@ export class UiBuilderEditorProvider
         const template = await pickTemplate();
         if (!template) return;
         const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
+        const designsFolder = folder
+            ? vscode.Uri.joinPath(folder, "ui-builder", "designs")
+            : undefined;
+        if (designsFolder) {
+            // `showSaveDialog` requires its default directory to already
+            // exist. Without this, VS Code reports the nested default path as
+            // missing before the user can choose a filename.
+            await vscode.workspace.fs.createDirectory(designsFolder);
+        }
         const target = await vscode.window.showSaveDialog({
-            defaultUri: folder
-                ? vscode.Uri.joinPath(
-                      folder,
-                      "ui-builder",
-                      "designs",
-                      "new-design.uid",
-                  )
+            defaultUri: designsFolder
+                ? vscode.Uri.joinPath(designsFolder, "new-design.uid")
                 : undefined,
             filters: { "UI Builder design": ["uid"] },
             saveLabel: "Create Design",
         });
         if (!target) return;
         await vscode.workspace.fs.createDirectory(
-            vscode.Uri.joinPath(target, ".."),
+            target.with({ path: path.posix.dirname(target.path) }),
         );
         await vscode.workspace.fs.writeFile(target, new Uint8Array());
         this.pendingTemplates.set(target.toString(), template);
