@@ -148,9 +148,9 @@ export class LiveDaemonGate implements DaemonGate {
         private readonly logger: DaemonClientLogger,
         private readonly logFilter: LogFilter = new LogFilter(),
         /**
-         * Plugin/daemon version this extension bundles (`BUNDLED_PLUGIN_VERSION`). Compared against
-         * the spawned daemon's reported version to detect a project pinning an incompatible-major
-         * plugin. Empty disables the check (e.g. unit tests that don't care about versions).
+         * Daemon version this extension expects (`BUNDLED_DAEMON_VERSION`, derived from the bundled plugin). Compared against
+         * the spawned daemon's reported version to detect a project resolving an incompatible-major
+         * daemon. Empty disables the check (e.g. unit tests that don't care about versions).
          */
         private readonly expectedDaemonVersion: string = "",
         /**
@@ -330,9 +330,9 @@ export class LiveDaemonGate implements DaemonGate {
     }
 
     /**
-     * Warn when a freshly-spawned daemon is on a different *major* version than the plugin this
-     * extension bundles ([expectedDaemonVersion]) — the project pins an incompatible-major
-     * compose-preview plugin, whose render/daemon wire format and APIs differ, so renders can fail
+     * Warn when a freshly-spawned daemon is on a different *major* version than the daemon this
+     * extension expects ([expectedDaemonVersion]) — the project resolves an incompatible-major
+     * compose-preview daemon, whose render/daemon wire format and APIs differ, so renders can fail
      * or look wrong. Always logs to the output channel; fires [onVersionMismatch] (deduped per
      * major-pair) so the host can show a one-time notification. No-op when the check is disabled or
      * the versions are same-major / unparseable.
@@ -350,9 +350,9 @@ export class LiveDaemonGate implements DaemonGate {
         }
         this.logger.appendLine(
             `[daemon] version mismatch for ${modulePath}: daemon v${daemonVersion} vs this ` +
-                `extension's bundled plugin v${this.expectedDaemonVersion} — they are on different ` +
+                `extension's expected daemon v${this.expectedDaemonVersion} — they are on different ` +
                 `major versions, which can render incorrectly. Align the project's compose-preview ` +
-                `plugin and the extension to the same major.`,
+                `daemon with the extension's expected daemon major.`,
         );
         const dedupeKey = `${majorVersionOf(daemonVersion)}->${majorVersionOf(
             this.expectedDaemonVersion,

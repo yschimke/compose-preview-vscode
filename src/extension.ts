@@ -147,6 +147,7 @@ import {
     materializeInitScript,
 } from "./initScript";
 import { resolveVersionPin } from "./versionPin";
+import { BUNDLED_DAEMON_VERSION } from "./version.generated";
 import {
     ComposePreviewMode,
     ResolvedMode,
@@ -1185,15 +1186,15 @@ export async function activate(
                   "0.1.0",
                   outputChannel,
                   logFilter,
-                  BUNDLED_PLUGIN_VERSION,
+                  BUNDLED_DAEMON_VERSION,
                   (mismatch) => {
                       void vscode.window
                           .showWarningMessage(
-                              `compose-preview: ${mismatch.modulePath} is using plugin ` +
-                                  `v${mismatch.daemonVersion}, but this extension bundles ` +
+                              `compose-preview: ${mismatch.modulePath} is using daemon ` +
+                                  `v${mismatch.daemonVersion}, but this extension expects daemon ` +
                                   `v${mismatch.expectedVersion} (different major versions). Previews ` +
                                   `may render incorrectly — align the project's compose-preview plugin ` +
-                                  `and the extension to the same major version.`,
+                                  `with the extension's bundled plugin.`,
                               "Show Logs",
                           )
                           .then((choice) => {
