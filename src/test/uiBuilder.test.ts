@@ -562,7 +562,12 @@ describe("uiBuilderChrome", () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pkg = require("../../package.json") as {
         contributes: {
-            commands: { command: string; icon?: string; enablement?: string }[];
+            commands: {
+                command: string;
+                title: string;
+                icon?: string;
+                enablement?: string;
+            }[];
             menus: Record<
                 string,
                 { command: string; when?: string; group?: string }[]
@@ -605,7 +610,8 @@ describe("uiBuilderChrome", () => {
             const declared = pkg.contributes.commands.find(
                 (c) => c.command === entry.command,
             );
-            assert.ok(declared, `${entry.command} is not declared`);
+            assert.ok(declared, ` is not declared`);
+            assert.strictEqual(declared.title, entry.title);
             assert.strictEqual(declared.icon, entry.icon);
             assert.strictEqual(declared.enablement, commandEnablement(entry));
             const menu = pkg.contributes.menus["editor/title"].find(

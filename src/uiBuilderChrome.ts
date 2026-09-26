@@ -87,7 +87,7 @@ export const UI_BUILDER_CHROME_COMMANDS: readonly UiBuilderChromeCommand[] = [
     },
     {
         command: "composePreview.uiBuilder.toggleCode",
-        title: "Toggle Generated Code",
+        title: "Open Generated Kotlin",
         icon: "$(code)",
         placement: "title",
         actionId: "dock.code",

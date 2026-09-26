@@ -135,11 +135,11 @@ With `state-actions.uid` focused:
 
 | ID | Do | Expect |
 | --- | --- | --- |
-| B1 | Look at the editor title bar (top right of the tab). | Buttons for **Undo**, **Redo**, **Show Components**, **Show/Hide Properties**, **Toggle Generated Code**, and **Open Design as Text**. 📸 |
+| B1 | Look at the editor title bar (top right of the tab). | Buttons for **Undo**, **Redo**, **Show Components**, **Show/Hide Properties**, **Open Generated Kotlin**, and **Open Design as Text**. 📸 |
 | B2 | Before any edit, hover Undo and Redo. | Both disabled. |
 | B3 | Click **Show Components**. | The components panel opens on the left of the canvas, and the button becomes **Hide Components** (a different icon). Click again: it closes and the button flips back. |
 | B4 | Same for **Hide Properties** / **Show Properties**. | The Properties panel closes and opens, and the button flips. |
-| B5 | **Toggle Generated Code**. | The generated Kotlin appears; toggle again hides it. |
+| B5 | **Open Generated Kotlin**. | A new, unsaved Kotlin editor opens beside the design. Saving it is optional and never changes the `.uid` design. |
 | B6 | Open the title bar's **"…"** menu. | Theme, Screen, Issues, Comments, History, Layers (in the Editor), Toggle Reference Image, Tidy to the 4dp Grid, Component Packs…, Keyboard Shortcuts, UI Builder Help. Each opens its panel or dialog. **UI Builder Help** opens the getting-started page in your browser. 📸 of the menu. |
 | B7 | Open a normal file (any `.md`) in the same editor group. | The UI Builder buttons disappear from the title bar. Switching back brings them back. |
 
