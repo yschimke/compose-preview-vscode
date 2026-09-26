@@ -1,7 +1,19 @@
 import * as assert from "assert";
+import * as fs from "fs";
+import * as path from "path";
+import { BUNDLED_DAEMON_VERSION } from "../version.generated";
 import { majorVersionOf, versionsIncompatible } from "../version";
 
 describe("version compatibility", () => {
+    it("generates the daemon version from the committed pin", () => {
+        const pin = JSON.parse(
+            fs.readFileSync(
+                path.resolve(__dirname, "../../plugin-version.json"),
+                "utf8",
+            ),
+        ) as { composePreviewDaemon: string };
+        assert.strictEqual(BUNDLED_DAEMON_VERSION, pin.composePreviewDaemon);
+    });
     it("reads the major as the first numeric segment", () => {
         assert.strictEqual(majorVersionOf("0.12.5"), 0);
         assert.strictEqual(majorVersionOf("1.2.3"), 1);
