@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.49.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.48.0...v1.49.0) (2026-09-26)
+
+
+### Features
+
+* open generated Kotlin in an editor ([#48](https://github.com/yschimke/compose-preview-vscode/issues/48)) ([d8315ae](https://github.com/yschimke/compose-preview-vscode/commit/d8315ae93cbbe4d378d3c35502044dff694d0569))
+* split UI Builder into its own sidebar ([#46](https://github.com/yschimke/compose-preview-vscode/issues/46)) ([8e9b736](https://github.com/yschimke/compose-preview-vscode/commit/8e9b736b431781ae864d839949c9b71a2bc724e6))
+
+
+### Bug Fixes
+
+* compare daemon versions in compatibility warning ([#45](https://github.com/yschimke/compose-preview-vscode/issues/45)) ([452c4aa](https://github.com/yschimke/compose-preview-vscode/commit/452c4aadfee50a15cefbc64dffec382dd75753bf))
+* support VS Code 1.115 ([#44](https://github.com/yschimke/compose-preview-vscode/issues/44)) ([fce6ad6](https://github.com/yschimke/compose-preview-vscode/commit/fce6ad6c0ebf76c037961265f97b3a7a4f461246))
+
 ## [1.48.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.47.1...v1.48.0) (2026-09-26)
 
 
