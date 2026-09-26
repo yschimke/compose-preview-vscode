@@ -66,6 +66,12 @@
                     "id": "compose-preview",
                     "title": "Compose Preview",
                     "icon": "media/preview-icon.svg"
+                },
+                {
+                    "id": "compose-ui-builder",
+                    "title": "Compose UI Builder",
+                    "icon": "media/preview-gutter.svg",
+                    "when": "config.composePreview.earlyFeatures.enabled"
                 }
             ]
         },
@@ -83,7 +89,9 @@
                     "name": "Preview History",
                     "visibility": "collapsed",
                     "when": "config.composePreview.earlyFeatures.enabled"
-                },
+                }
+            ],
+            "compose-ui-builder": [
                 {
                     "id": "composePreview.uiBuilder.layers",
                     "name": "Design Layers",
