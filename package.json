@@ -2,7 +2,7 @@
     "name": "compose-preview",
     "displayName": "Compose Preview",
     "description": "Live preview rendering for Jetpack Compose and Compose Multiplatform @Preview functions",
-    "version": "1.47.1",
+    "version": "1.48.0",
     "publisher": "yuri-schimke",
     "license": "Apache-2.0",
     "repository": {

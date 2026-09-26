@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.47.1...v1.48.0) (2026-09-26)
+
+
+### Features
+
+* **ui-builder:** open .uid designs in the Compose UI Builder, as an editor plus views (early access) ([#35](https://github.com/yschimke/compose-preview-vscode/issues/35)) ([c8c5183](https://github.com/yschimke/compose-preview-vscode/commit/c8c5183bffa30b5b2767798cb8a30195e0e6b2c9))
+
 ## [1.47.1](https://github.com/yschimke/compose-preview-vscode/compare/v1.47.0...v1.47.1) (2026-08-29)
 
 
