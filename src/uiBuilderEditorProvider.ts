@@ -51,6 +51,7 @@ type FromEditor =
     | { type: "compose-ui-builder/chrome"; actions: UiBuilderHostAction[] }
     | { type: "compose-ui-builder/error"; message: string }
     | { type: "compose-ui-builder/open-link"; url: string }
+    | { type: "compose-ui-builder/generated-code"; kotlin: string }
     | { type: typeof UI_BUILDER_PAGE_ERROR_MESSAGE; message: string }
     | { type: "compose-preview/ui-builder-enable-early-features" }
     | { type: "compose-preview/ui-builder-open-as-text" };
@@ -409,6 +410,9 @@ export class UiBuilderEditorProvider
                     );
                 }
                 break;
+            case "compose-ui-builder/generated-code":
+                await this.openGeneratedKotlin(message.kotlin);
+                break;
             case UI_BUILDER_PAGE_ERROR_MESSAGE:
                 this.host.log(`[ui-builder] page error: ${message.message}`);
                 break;
@@ -430,6 +434,18 @@ export class UiBuilderEditorProvider
                 );
                 break;
         }
+    }
+
+    /** Opens generated source as a normal, unsaved Kotlin editor beside the design. */
+    private async openGeneratedKotlin(kotlin: string): Promise<void> {
+        const document = await vscode.workspace.openTextDocument({
+            content: kotlin,
+            language: "kotlin",
+        });
+        await vscode.window.showTextDocument(
+            document,
+            vscode.ViewColumn.Beside,
+        );
     }
 
     /** An empty file: start it from a template, which the editor builds. */
