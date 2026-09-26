@@ -663,7 +663,7 @@
         "@types/mocha": "10.0.10",
         "@types/node": "24.13.6",
         "@types/three": "0.186.0",
-        "@types/vscode": "1.138.0",
+        "@types/vscode": "1.134.0",
         "@vscode/codicons": "0.0.46-24",
         "@vscode/test-electron": "3.1.0",
         "@vscode/vsce": "4.0.0",
