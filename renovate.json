@@ -53,9 +53,9 @@
       "groupName": "three"
     },
     {
-      "description": "Track the extension plugin pin through the published release BOM; the daemon pin and fixtures remain verified against that BOM.",
+      "description": "Track published plugin markers for the extension compatibility pin; derive runtime versions from that release BOM. Keep upgrades reviewed rather than automerged.",
       "matchPackageNames": [
-        "ee.schimke.composeai:compose-ai-tools-bom"
+        "ee.schimke.composeai.preview:ee.schimke.composeai.preview.gradle.plugin"
       ],
       "groupName": "compose-ai-tools",
       "rangeStrategy": "pin",
@@ -63,7 +63,8 @@
       "schedule": [
         "at any time"
       ],
-      "minimumReleaseAge": null
+      "minimumReleaseAge": null,
+      "automerge": false
     }
   ],
   "customManagers": [
@@ -76,7 +77,7 @@
         "\"composeAiPlugin\":\\s*\"(?<currentValue>[^\"\\n]+)\""
       ],
       "datasourceTemplate": "maven",
-      "depNameTemplate": "ee.schimke.composeai:compose-ai-tools-bom"
+      "depNameTemplate": "ee.schimke.composeai.preview:ee.schimke.composeai.preview.gradle.plugin"
     }
   ]
 }
