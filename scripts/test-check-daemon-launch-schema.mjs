@@ -55,6 +55,36 @@ async function fixture({ source, registered = true }) {
 }
 
 describe("daemon-launch schema gate", () => {
+    it("uses the module version from a partial release BOM", async (t) => {
+        const { root, allowlistPath } = await fixture({
+            source: "export const DAEMON_DESCRIPTOR_SCHEMA_VERSION = 2;",
+        });
+        const urls = [];
+        t.mock.method(globalThis, "fetch", async (url) => {
+            urls.push(url);
+            if (url.endsWith("compose-ai-tools-bom-1.61.2.pom")) {
+                return new Response(`
+                    <project><dependencyManagement><dependencies><dependency>
+                    <groupId>ee.schimke.composeai</groupId>
+                    <artifactId>daemon-launch-builder</artifactId>
+                    <version>1.60.0</version>
+                    </dependency></dependencies></dependencyManagement></project>
+                `);
+            }
+            if (url.endsWith("daemon-launch-builder-1.60.0-schema.json")) {
+                return Response.json(metadata);
+            }
+            throw new Error(`Unexpected artifact lookup: ${url}`);
+        });
+        const result = await checkDaemonLaunchSchema({
+            repoRoot: root,
+            allowlistPath,
+        });
+        assert.equal(result.schemaVersion, 2);
+        assert.equal(urls.length, 2);
+        assert.match(result.metadataSource, /\/1\.60\.0\//);
+    });
+
     it("ignores declarations written only in comments and strings", () => {
         const declarations = declarationsIn(`
             // export const COMMENT_DESCRIPTOR_SCHEMA_VERSION = 1;

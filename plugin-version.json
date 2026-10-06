@@ -19,13 +19,13 @@
         "daemon wire live there, at a tag that has nothing to do with the plugin's version.",
         "Every compose-ai-tools POM imports `compose-preview-daemon-bom` at this version, so",
         "it is a published fact rather than a judgement: scripts/check-daemon-pin.mjs reads",
-        "it back out of `render-host-<composeAiPlugin>.pom` on Maven Central and fails if",
+        "it back out of `compose-ai-tools-bom-<composeAiPlugin>.pom` on Maven Central and fails if",
         "the two have skewed. Bump it only to whatever that POM says.",
         "",
         "`daemon-launch-builder` stayed in compose-ai-tools and is still versioned with the",
         "plugin, so scripts/check-daemon-launch-schema.mjs keeps reading it at",
         "`composeAiPlugin`."
     ],
-    "composeAiPlugin": "2.25.0",
-    "composePreviewDaemon": "3.8.3"
+    "composeAiPlugin": "2.34.1",
+    "composePreviewDaemon": "3.13.2"
 }

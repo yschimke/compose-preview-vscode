@@ -8,8 +8,8 @@ trains:
 
 | Train | Repository | What it publishes | Latest seen here |
 | --- | --- | --- | --- |
-| `2.x` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) | the Gradle plugin, the CLI, `render-host`, `daemon-launch-builder` — `compose-ai-tools-bom` | `2.25.0` (the pin) |
-| `3.x` | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) | the daemons, the three renderers, `preview-annotations`, the `data-*` extractors — `compose-preview-daemon-bom` | `3.8.3` (what the pin resolves) |
+| `2.x` | [`compose-ai-tools`](https://github.com/yschimke/compose-ai-tools) | the Gradle plugin, the CLI, `render-host`, `daemon-launch-builder` — `compose-ai-tools-bom` | `2.34.1` (the pin) |
+| `3.x` | [`compose-preview-daemon`](https://github.com/yschimke/compose-preview-daemon) | the daemons, the three renderers, `preview-annotations`, the `data-*` extractors — `compose-preview-daemon-bom` | `3.13.2` (what the pin resolves) |
 | `3.x` | [`compose-preview-contracts`](https://github.com/yschimke/compose-preview-contracts) | the wire contracts — `compose-preview-contracts-bom` | via the plugin |
 
 The version numbers are unrelated to each other and to this extension's. What ties
@@ -42,7 +42,7 @@ not chosen**. Since the daemon left compose-ai-tools, the protocol fixtures and 
 daemon wire live in a repository whose tags have nothing to do with the plugin's
 version, so this repository has to write down which daemon release the pinned plugin
 resolves in order to fetch from the right tag. That value is a published fact — the
-`compose-preview-daemon-bom` import in `render-host-<composeAiPlugin>.pom` — so
+`compose-preview-daemon-bom` import in `compose-ai-tools-bom-<composeAiPlugin>.pom` — so
 `scripts/check-daemon-pin.mjs` reads it back off Maven Central and fails when the two
 have skewed. Run it after bumping `composeAiPlugin`; it prints the value to use.
 
