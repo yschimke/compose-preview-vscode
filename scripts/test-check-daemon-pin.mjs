@@ -16,7 +16,7 @@ function pom(dependencies) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <project>
   <groupId>ee.schimke.composeai</groupId>
-  <artifactId>render-host</artifactId>
+  <artifactId>compose-ai-tools-bom</artifactId>
   <dependencyManagement>
     <dependencies>${dependencies}</dependencies>
   </dependencyManagement>
@@ -132,7 +132,7 @@ describe("daemon pin gate", () => {
     it("resolves the anchor POM at the pinned plugin version", () => {
         assert.equal(
             pomUrl("2.18.1"),
-            "https://repo1.maven.org/maven2/ee/schimke/composeai/render-host/2.18.1/render-host-2.18.1.pom",
+            "https://repo1.maven.org/maven2/ee/schimke/composeai/compose-ai-tools-bom/2.18.1/compose-ai-tools-bom-2.18.1.pom",
         );
     });
 });

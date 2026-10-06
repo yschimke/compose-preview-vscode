@@ -5,7 +5,7 @@
   ],
   "packageRules": [
     {
-      "description": "Playwright: never bump unattended, and never bump one half alone. `playwright` and `@playwright/test` are held at the same version on purpose — Playwright bundles its own Chromium, and a different Chromium rasterises text and antialiasing differently. Every baseline on the `preview/main` branch was captured with this one, so a bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopting a new Playwright means republishing baselines in the same change, which a bot cannot do — hence `automerge: false`, overriding the preset's auto-land for minor/patch. Grouped so the two versions can never desync; dashboard-gated so the upgrade is a decision rather than a Monday morning surprise.",
+      "description": "Playwright: never bump unattended, and never bump one half alone. `playwright` and `@playwright/test` are held at the same version on purpose \u2014 Playwright bundles its own Chromium, and a different Chromium rasterises text and antialiasing differently. Every baseline on the `preview/main` branch was captured with this one, so a bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopting a new Playwright means republishing baselines in the same change, which a bot cannot do \u2014 hence `automerge: false`, overriding the preset's auto-land for minor/patch. Grouped so the two versions can never desync; dashboard-gated so the upgrade is a decision rather than a Monday morning surprise.",
       "matchManagers": [
         "npm"
       ],
@@ -18,7 +18,7 @@
       "automerge": false
     },
     {
-      "description": "@types/vscode declares the minimum VS Code version this extension supports, and it has to stay in step with `engines.vscode` in package.json — which Renovate does not update. Bumping the types alone silently lets code compile against APIs older editors do not have; bumping both drops users on older VS Code. Either way it is a support-policy decision, so it waits on the dashboard and never auto-lands.",
+      "description": "@types/vscode declares the minimum VS Code version this extension supports, and it has to stay in step with `engines.vscode` in package.json \u2014 which Renovate does not update. Bumping the types alone silently lets code compile against APIs older editors do not have; bumping both drops users on older VS Code. Either way it is a support-policy decision, so it waits on the dashboard and never auto-lands.",
       "matchManagers": [
         "npm"
       ],
@@ -29,7 +29,7 @@
       "automerge": false
     },
     {
-      "description": "`engines.vscode` is a RANGE, not a version to pin. The preset's `rangeStrategy: pin` is right for dependencies and wrong here: VS Code reads this field as a semver range against the running editor, so a pinned `1.135.0` means `only 1.135.0` and every later editor refuses to load the extension — which is exactly what #11 did, and what surfaced the day stable moved to 1.138.0. Disabled rather than re-ranged, because which floor this extension supports is the same support-policy decision as `@types/vscode` above, made by a human in the same change.",
+      "description": "`engines.vscode` is a RANGE, not a version to pin. The preset's `rangeStrategy: pin` is right for dependencies and wrong here: VS Code reads this field as a semver range against the running editor, so a pinned `1.135.0` means `only 1.135.0` and every later editor refuses to load the extension \u2014 which is exactly what #11 did, and what surfaced the day stable moved to 1.138.0. Disabled rather than re-ranged, because which floor this extension supports is the same support-policy decision as `@types/vscode` above, made by a human in the same change.",
       "matchManagers": [
         "npm"
       ],
@@ -51,6 +51,32 @@
         "@types/three"
       ],
       "groupName": "three"
+    },
+    {
+      "description": "Track the extension plugin pin through the published release BOM; the daemon pin and fixtures remain verified against that BOM.",
+      "matchPackageNames": [
+        "ee.schimke.composeai:compose-ai-tools-bom"
+      ],
+      "groupName": "compose-ai-tools",
+      "rangeStrategy": "pin",
+      "enabled": true,
+      "schedule": [
+        "at any time"
+      ],
+      "minimumReleaseAge": null
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^plugin-version\\.json$/"
+      ],
+      "matchStrings": [
+        "\"composeAiPlugin\":\\s*\"(?<currentValue>[^\"\\n]+)\""
+      ],
+      "datasourceTemplate": "maven",
+      "depNameTemplate": "ee.schimke.composeai:compose-ai-tools-bom"
     }
   ]
 }

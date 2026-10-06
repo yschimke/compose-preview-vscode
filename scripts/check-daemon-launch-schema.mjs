@@ -3,6 +3,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { fetchToolsBom, versionInBom } from "./check-daemon-pin.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = resolve(here, "..");
@@ -129,7 +130,12 @@ function metadataUrl(version) {
 }
 
 async function fetchMetadata(version) {
-    const url = metadataUrl(version);
+    const { pom, source } = await fetchToolsBom(version);
+    const moduleVersion = versionInBom(pom, "daemon-launch-builder");
+    if (!moduleVersion) {
+        throw new Error(`${source} has no daemon-launch-builder constraint`);
+    }
+    const url = metadataUrl(moduleVersion);
     const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
     if (!response.ok) {
         throw new Error(
