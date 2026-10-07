@@ -3,6 +3,7 @@
   "extends": [
     "github>yschimke/renovate-config"
   ],
+  "platformAutomerge": true,
   "packageRules": [
     {
       "description": "Playwright: never bump unattended, and never bump one half alone. `playwright` and `@playwright/test` are held at the same version on purpose \u2014 Playwright bundles its own Chromium, and a different Chromium rasterises text and antialiasing differently. Every baseline on the `preview/main` branch was captured with this one, so a bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopting a new Playwright means republishing baselines in the same change, which a bot cannot do \u2014 hence `automerge: false`, overriding the preset's auto-land for minor/patch. Grouped so the two versions can never desync; dashboard-gated so the upgrade is a decision rather than a Monday morning surprise.",
