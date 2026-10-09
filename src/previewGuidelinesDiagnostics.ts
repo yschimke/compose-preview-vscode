@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import type { ModuleInfo } from "./gradleService";
-import { detectPreviews } from "./previewDetection";
+import { DetectedPreview, detectFunctions } from "./previewDetection";
 import { PreviewRegistry } from "./previewRegistry";
 import {
     GuidelineFinding,
@@ -10,10 +10,14 @@ import {
     annotatedPathFor,
     failingFindings,
     findingMessage,
+    functionForFinding,
     guidelinesFileCandidates,
+    kotlinFileClassName,
+    kotlinPackageName,
     parseCatalogRules,
     parseModuleGuidelines,
-    previewIdMatchesFunction,
+    scanFunctionDeclarations,
+    sourceFileMatches,
 } from "./guidelinesResults";
 import type { PreviewManifest } from "./types";
 
@@ -27,8 +31,10 @@ export interface GuidelinesModuleSource {
 /**
  * Publishes the design-guidelines check's findings (`compose-preview guidelines`, which writes
  * `<module>/build/compose-previews/guidelines.json`) as diagnostics on each `@Preview` function,
- * the way [PreviewA11yDiagnostics] does for accessibility findings: same line mapping
- * ([detectPreviews]), same debounced refresh on open and edit.
+ * the way [PreviewA11yDiagnostics] does for accessibility findings, with the same debounced
+ * refresh on open and edit. Findings are placed from the module's manifest and the document's
+ * functions (the Kotlin language server's symbols, else a text scan), not the preview panel's
+ * registry, so they appear without the panel ever having opened.
  *
  * Only `fail` verdicts are problems. A rule the model answered `needs_evidence`, or left
  * unchecked, is not a finding. Each diagnostic links its rule to the guide it quotes and, when
@@ -118,24 +124,34 @@ export class PreviewGuidelinesDiagnostics implements vscode.Disposable {
             this.collection.delete(doc.uri);
             return;
         }
-        const detected = await detectPreviews(doc, this.registry, this.log);
         const manifest = this.modules.readManifest(module);
+        // Placed from the module's own manifest and the document, not the preview panel's
+        // registry, so a report written from a terminal shows up before the panel has loaded.
+        const detected = await this.functionsOf(doc);
+        const text = doc.getText();
+        const packageName = kotlinPackageName(text);
+        const file = {
+            manifestPreviews: manifest?.previews ?? [],
+            isThisFile: (sourceFile: string | null) =>
+                sourceFileMatches(sourceFile, doc.uri.fsPath, packageName),
+            fileClassNames: [kotlinFileClassName(text, doc.uri.fsPath)],
+            functionNames: detected.map((d) => d.functionName),
+        };
+        const byFunction = new Map<string, GuidelineFinding[]>();
+        for (const f of loaded.findings) {
+            const fn = functionForFinding(f.previewId, file);
+            if (fn !== null) {
+                byFunction.set(fn, [...(byFunction.get(fn) ?? []), f]);
+            }
+        }
         const diagnostics: vscode.Diagnostic[] = [];
+        const placed = new Set<string>();
         for (const det of detected) {
-            const entry = this.registry.find(doc.uri.fsPath, det.functionName);
-            if (!entry) {
+            const findings = byFunction.get(det.functionName);
+            if (!findings || placed.has(det.functionName)) {
                 continue;
             }
-            const findings = loaded.findings.filter((f) =>
-                previewIdMatchesFunction(
-                    f.previewId,
-                    entry.preview.className,
-                    det.functionName,
-                ),
-            );
-            if (findings.length === 0) {
-                continue;
-            }
+            placed.add(det.functionName);
             const line = det.funLineNumber;
             const range = new vscode.Range(
                 line,
@@ -152,6 +168,26 @@ export class PreviewGuidelinesDiagnostics implements vscode.Disposable {
         } else {
             this.collection.set(doc.uri, diagnostics);
         }
+    }
+
+    /** The document's functions: the Kotlin language server's, else a text scan. */
+    private async functionsOf(
+        doc: vscode.TextDocument,
+    ): Promise<DetectedPreview[]> {
+        const fromLsp = await detectFunctions(doc, this.log);
+        if (fromLsp.length > 0) {
+            return fromLsp;
+        }
+        return scanFunctionDeclarations(doc.getText()).map((f) => ({
+            functionName: f.functionName,
+            funLineNumber: f.line,
+            nameRange: new vscode.Range(
+                f.line,
+                f.nameStart,
+                f.line,
+                f.nameStart + f.functionName.length,
+            ),
+        }));
     }
 
     private diagnostic(

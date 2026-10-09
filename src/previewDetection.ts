@@ -33,6 +33,20 @@ export async function detectPreviews(
     registry: PreviewRegistry,
     log?: (msg: string) => void,
 ): Promise<DetectedPreview[]> {
+    return (await detectFunctions(doc, log)).filter((f) =>
+        registry.find(doc.uri.fsPath, f.functionName),
+    );
+}
+
+/**
+ * Every function and method the active Kotlin language server reports for [doc], previews or
+ * not; `[]` when there is no Kotlin language server. For callers that place results by a
+ * manifest they read themselves rather than by the panel's [PreviewRegistry].
+ */
+export async function detectFunctions(
+    doc: vscode.TextDocument,
+    log?: (msg: string) => void,
+): Promise<DetectedPreview[]> {
     const symbols = await fetchSymbols(doc, log);
     if (!symbols) {
         return [];
@@ -44,14 +58,11 @@ export async function detectPreviews(
             s.kind === vscode.SymbolKind.Function ||
             s.kind === vscode.SymbolKind.Method;
         if (isFn) {
-            const name = s.name.replace(/\(.*$/, "").trim();
-            if (registry.find(doc.uri.fsPath, name)) {
-                out.push({
-                    functionName: name,
-                    funLineNumber: s.funLine,
-                    nameRange: s.selectionRange,
-                });
-            }
+            out.push({
+                functionName: s.name.replace(/\(.*$/, "").trim(),
+                funLineNumber: s.funLine,
+                nameRange: s.selectionRange,
+            });
         }
         s.children?.forEach(visit);
     };

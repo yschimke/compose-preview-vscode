@@ -21,12 +21,17 @@ import {
  * 2.38.0+) for the module of the active Kotlin file — narrowed to that file's previews when one
  * is open — with `--annotate`, so the Problems panel ([PreviewGuidelinesDiagnostics], which
  * watches the `guidelines.json` it writes) and the annotated renders update when it finishes.
+ *
+ * [bootstrap] writes the `composePreviewApplied` markers first, as Refresh and Render do: on a
+ * module that gets the plugin by the extension's injection, nothing else tells [resolveModule]
+ * it has previews until the preview view has opened once.
  */
 export async function checkDesignGuidelines(
     modules: GuidelinesModuleSource,
     keys: GuidelinesKeyStore,
     onFinished: () => void,
     log: (msg: string) => void,
+    bootstrap: () => Promise<unknown> = async () => undefined,
 ): Promise<void> {
     const config = vscode.workspace.getConfiguration(
         "composePreview.guidelines",
@@ -39,6 +44,7 @@ export async function checkDesignGuidelines(
     }
     const editor = vscode.window.activeTextEditor;
     const file = editor?.document.uri.fsPath;
+    await bootstrap();
     const module = file ? modules.resolveModule(file) : null;
     if (!module) {
         void vscode.window.showWarningMessage(

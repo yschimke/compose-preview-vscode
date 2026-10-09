@@ -2164,6 +2164,7 @@ export async function activate(
                     guidelinesKeys,
                     () => guidelinesDiagnostics.refreshAll(),
                     guidelinesLog,
+                    ensureAppliedMarkersBootstrapped,
                 );
             },
         ),

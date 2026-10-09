@@ -10,13 +10,18 @@ import {
     annotatedPathFor,
     failingFindings,
     findingMessage,
+    functionForFinding,
     guidelinesCliArgs,
     guidelinesCliEnv,
     guidelinesFileCandidates,
+    kotlinFileClassName,
+    kotlinPackageName,
     parseCatalogRules,
     parseGuidelinesSummary,
     parseModuleGuidelines,
     previewIdMatchesFunction,
+    scanFunctionDeclarations,
+    sourceFileMatches,
 } from "../guidelinesResults";
 
 const fixtures = path.resolve(__dirname, "../../src/test/fixtures/guidelines");
@@ -82,6 +87,145 @@ describe("guidelinesResults", () => {
             ),
         );
         assert.ok(!previewIdMatchesFunction(WEAR_LIST, cls, "Wear"));
+    });
+
+    describe("placing a finding on its function", () => {
+        const cls = "com.example.CardsKt";
+        const doc = "/w/app/src/main/kotlin/com/example/Cards.kt";
+        const file = (
+            manifestPreviews: {
+                id: string;
+                className: string;
+                functionName: string;
+                sourceFile: string | null;
+            }[],
+        ) => ({
+            manifestPreviews,
+            isThisFile: (sf: string | null) =>
+                sourceFileMatches(sf, doc, "com.example"),
+            fileClassNames: [cls],
+            functionNames: ["Card", "Card_Dark", "Other"],
+        });
+
+        it("takes the function from the manifest, not the id's prefix", () => {
+            const f = file([
+                {
+                    id: `${cls}.Card_Dark`,
+                    className: cls,
+                    functionName: "Card_Dark",
+                    sourceFile: "com/example/Cards.kt",
+                },
+                {
+                    id: `${cls}.Card`,
+                    className: cls,
+                    functionName: "Card",
+                    sourceFile: "com/example/Cards.kt",
+                },
+            ]);
+            assert.strictEqual(
+                functionForFinding(`${cls}.Card_Dark`, f),
+                "Card_Dark",
+            );
+            assert.strictEqual(functionForFinding(`${cls}.Card`, f), "Card");
+        });
+
+        it("prefers the longest function when the manifest does not list the id", () => {
+            const f = file([]);
+            assert.strictEqual(
+                functionForFinding(`${cls}.Card_Dark`, f),
+                "Card_Dark",
+            );
+            assert.strictEqual(
+                functionForFinding(`${cls}.Card_Dark_192dp`, f),
+                "Card_Dark",
+            );
+            assert.strictEqual(
+                functionForFinding(`${cls}.Card_192dp`, f),
+                "Card",
+            );
+            assert.strictEqual(
+                functionForFinding("com.other.CardsKt.Card", f),
+                null,
+            );
+        });
+
+        it("drops a listed preview whose source is another file", () => {
+            const f = file([
+                {
+                    id: `${cls}.Card`,
+                    className: cls,
+                    functionName: "Card",
+                    sourceFile: "com/example/Elsewhere.kt",
+                },
+            ]);
+            assert.strictEqual(functionForFinding(`${cls}.Card`, f), null);
+        });
+
+        it("matches package-qualified and module-relative source paths", () => {
+            assert.ok(
+                sourceFileMatches("com/example/Cards.kt", doc, "com.example"),
+            );
+            assert.ok(
+                sourceFileMatches(
+                    "src/main/kotlin/com/example/Cards.kt",
+                    doc,
+                    "com.example",
+                ),
+            );
+            assert.ok(
+                !sourceFileMatches("com/example/Other.kt", doc, "com.example"),
+            );
+            assert.ok(!sourceFileMatches(null, doc, "com.example"));
+        });
+
+        it("names the file facade class", () => {
+            assert.strictEqual(
+                kotlinFileClassName("package com.example\n", doc),
+                cls,
+            );
+            assert.strictEqual(
+                kotlinFileClassName(
+                    '@file:JvmName("CardPreviews")\npackage com.example\n',
+                    doc,
+                ),
+                "com.example.CardPreviews",
+            );
+            assert.strictEqual(kotlinPackageName("fun x() {}"), null);
+        });
+
+        it("finds functions by text when no language server answers", () => {
+            const text = [
+                "package com.example",
+                "",
+                "// fun Commented() {}",
+                '@Preview(name = "dark")',
+                "@Composable",
+                "fun Card_Dark() {}",
+                "",
+                "@Preview @Composable private fun Card() {",
+                "}",
+                "/*",
+                "fun InComment() {}",
+                "*/",
+                "internal fun <T> List<T>.Other(x: T) {}",
+            ].join("\n");
+            assert.deepStrictEqual(
+                scanFunctionDeclarations(text).map((f) => [
+                    f.functionName,
+                    f.line,
+                ]),
+                [
+                    ["Card_Dark", 5],
+                    ["Card", 7],
+                    ["Other", 12],
+                ],
+            );
+            const card = scanFunctionDeclarations(text)[1];
+            assert.strictEqual(
+                text.split("\n")[7].slice(card.nameStart, card.nameStart + 4),
+                "Card",
+            );
+        });
     });
 
     it("names the annotated render beside the render", () => {
