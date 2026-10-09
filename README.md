@@ -127,21 +127,45 @@ font browser backed by the keyless Google Fonts catalog (no API key required):
   snippet (with `FontVariation.Settings` for variable axes) and a **Copy**
   button.
 
+### Design guidelines
+
+Run **Compose Preview: Check Design Guidelines** on a Kotlin file to check its
+previews against the catalog's design guidance (`ui-builder.guidelines.json`):
+the extension runs `compose-preview guidelines` (compose-ai-tools 2.38.0 or
+later) for the file's module with `--annotate`, and each broken guideline shows
+in the **Problems** panel on its `@Preview` function, linked to the
+developer.android.com guide the rule quotes, with the annotated render as
+related information.
+
+- It runs on your own [OpenRouter](https://openrouter.ai/settings/keys) key:
+  **Compose Preview: Set OpenRouter Key** stores it in your OS keychain
+  (VS Code SecretStorage), and it is passed to the CLI only through its
+  environment, never on the command line.
+- Findings are advice. A rule the model could not decide (`needs_evidence`)
+  is not shown as a problem.
+- The extension reads `build/compose-previews/guidelines.json`, so results from
+  a CLI run in a terminal show up too.
+
 ### Commands
 
-| Command                                | Description                                                                      |
-| -------------------------------------- | -------------------------------------------------------------------------------- |
-| `Compose Preview: Refresh Previews`    | Re-read `previews.json` and rendered PNGs from `build/compose-previews/`.        |
-| `Compose Preview: Render All Previews` | Run the `composePreviewRenderAll` Gradle task to discover and render everything. |
-| `Compose Preview: Browse Google Fonts` | Open the Google Fonts browser: search, download, and live-customise fonts.       |
+| Command                                                   | Description                                                                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `Compose Preview: Refresh Previews`                       | Re-read `previews.json` and rendered PNGs from `build/compose-previews/`.                                    |
+| `Compose Preview: Render All Previews`                    | Run the `composePreviewRenderAll` Gradle task to discover and render everything.                             |
+| `Compose Preview: Browse Google Fonts`                    | Open the Google Fonts browser: search, download, and live-customise fonts.                                   |
+| `Compose Preview: Check Design Guidelines`                | Check the active file's previews against the catalog's design guidelines; findings go to the Problems panel. |
+| `Compose Preview: Set OpenRouter Key (Design Guidelines)` | Store the OpenRouter key the design-guidelines check uses, in the OS keychain.                               |
 
 ### Settings
 
-| Setting                        | Default  | Description                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `composePreview.mode`          | `full`   | Backend mode: `full` runs the daemon with data extensions and live previews; `minimal` drives only the Gradle plugin (no daemon, no auto-render on save). The bundled init script is what makes `full` safe to default to on any Android / Compose workspace. Requires a window reload to take effect. Legacy `auto` values fall back to `full`. |
-| `composePreview.variant`       | `debug`  | Build variant to use for preview rendering (Android).                                                                                                                                                                                                                                                                                            |
-| `composePreview.logging.level` | `normal` | Verbosity for the "Compose Preview" output channel. `quiet` shows only errors and the BUILD outcome; `normal` keeps active task headers and summary lines but drops UP-TO-DATE/SKIPPED noise, configuration-cache bookkeeping, and dedupes the repeated Roborazzi ActionBar warnings; `verbose` shows every line from Gradle and the daemon.     |
+| Setting                             | Default                        | Description                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `composePreview.mode`               | `full`                         | Backend mode: `full` runs the daemon with data extensions and live previews; `minimal` drives only the Gradle plugin (no daemon, no auto-render on save). The bundled init script is what makes `full` safe to default to on any Android / Compose workspace. Requires a window reload to take effect. Legacy `auto` values fall back to `full`. |
+| `composePreview.variant`            | `debug`                        | Build variant to use for preview rendering (Android).                                                                                                                                                                                                                                                                                            |
+| `composePreview.guidelines.model`   | `deepseek/deepseek-v4.1-flash` | OpenRouter model the design-guidelines check asks.                                                                                                                                                                                                                                                                                               |
+| `composePreview.guidelines.maxCost` | `0.1`                          | Stop a design-guidelines check after this many US dollars.                                                                                                                                                                                                                                                                                       |
+| `composePreview.guidelines.surface` | `auto`                         | Which of the catalog's rules to ask: `auto`, `screen`, `widget` or `component`.                                                                                                                                                                                                                                                                  |
+| `composePreview.logging.level`      | `normal`                       | Verbosity for the "Compose Preview" output channel. `quiet` shows only errors and the BUILD outcome; `normal` keeps active task headers and summary lines but drops UP-TO-DATE/SKIPPED noise, configuration-cache bookkeeping, and dedupes the repeated Roborazzi ActionBar warnings; `verbose` shows every line from Gradle and the daemon.     |
 
 ## Links
 

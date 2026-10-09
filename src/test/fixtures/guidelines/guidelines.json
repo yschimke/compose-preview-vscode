@@ -1,0 +1,98 @@
+{
+    "module": "catalog",
+    "catalog": "wear-m3",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "results": [
+        {
+            "previewId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp",
+            "renderHash": "93151868a0063bdf7b03881bd29a635fc59d87b3beabfa68da9a7469bc7108f6",
+            "record": {
+                "schema": "compose-ui-builder/guidelines-result/v1",
+                "previewId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp",
+                "revision": 0,
+                "model": "deepseek/deepseek-v4.1-flash",
+                "rulesVersion": 1,
+                "asked": [
+                    "wear.layout.time-text-clear",
+                    "wear.layout.time-text-shown",
+                    "wear.layout.no-clipping",
+                    "wear.layout.responsive-width",
+                    "wear.layout.column-never-scrolls",
+                    "wear.dialog.dedicated-task",
+                    "wear.touch-target-48dp",
+                    "wear.color.role-pairs",
+                    "wear.empty-state-has-action",
+                    "wear.gestures.no-hidden-actions",
+                    "wear.edge-button.in-slot",
+                    "wear.edge-button.content-fits-size",
+                    "wear.button.emphasis",
+                    "wear.button.child-not-primary",
+                    "wear.type.titles-not-in-controls",
+                    "wear.type.numerals-digits-only",
+                    "wear.type.theme-styles",
+                    "wear.scroll-indicator-matches",
+                    "wear.time-text.not-on-transient",
+                    "wear.actions-labelled",
+                    "wear.color.container-not-for-content",
+                    "wear.card.text-budget",
+                    "wear.dialog.alert-is-a-decision",
+                    "wear.slider.segment-limit",
+                    "wear.list-header.short"
+                ],
+                "verdicts": [
+                    {
+                        "ruleId": "wear.layout.time-text-shown",
+                        "verdict": "fail",
+                        "confidence": 0.55,
+                        "reason": "ScreenScaffold's timeText is not set and no time text appears in the render.",
+                        "subjectId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp"
+                    },
+                    {
+                        "ruleId": "wear.touch-target-48dp",
+                        "verdict": "fail",
+                        "confidence": 0.72,
+                        "nodeIds": ["n3"],
+                        "reason": "The icon button is 36dp.",
+                        "subjectId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp"
+                    },
+                    {
+                        "ruleId": "wear.type.theme-styles",
+                        "verdict": "needs_evidence",
+                        "confidence": 0.4,
+                        "reason": "Need the source.",
+                        "subjectId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp"
+                    },
+                    {
+                        "ruleId": "wear.layout.no-clipping",
+                        "verdict": "pass",
+                        "confidence": 0.9,
+                        "reason": "",
+                        "subjectId": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp"
+                    },
+                    {
+                        "ruleId": "wear.actions-labelled",
+                        "verdict": "fail",
+                        "confidence": 0.8,
+                        "reason": "Belongs to another preview in the batch.",
+                        "subjectId": "other.Preview"
+                    }
+                ],
+                "ranBy": "cli:yuri",
+                "recordedAtEpochMillis": 1791585022820,
+                "subjects": [
+                    {
+                        "id": "ee.schimke.wearm3catalog.sections.ListsKt.WearList_192dp",
+                        "kind": "preview",
+                        "renderHash": "93151868a0063bdf7b03881bd29a635fc59d87b3beabfa68da9a7469bc7108f6",
+                        "label": "WearList"
+                    }
+                ],
+                "servedModel": "deepseek/deepseek-v4.1-flash",
+                "provider": "Parasail",
+                "costUsd": 0.00853758,
+                "generationId": "gen-1791584869-PpB3kqbfcqfdWboLstQu"
+            },
+            "unchecked": ["wear.type.theme-styles"]
+        }
+    ]
+}
