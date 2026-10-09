@@ -160,6 +160,147 @@ export function previewIdMatchesFunction(
     return previewId === base || previewId.startsWith(`${base}_`);
 }
 
+/** The parts of a manifest `PreviewInfo` that place a finding on its function. */
+export interface PreviewFunctionRef {
+    id: string;
+    className: string;
+    functionName: string;
+    sourceFile: string | null;
+}
+
+/** What is known about one open Kotlin file when placing findings on its functions. */
+export interface FileFunctions {
+    /** The previews of the module's manifest, if one has been written; may be empty. */
+    manifestPreviews: PreviewFunctionRef[];
+    /** Whether a manifest `sourceFile` is this file. */
+    isThisFile: (sourceFile: string | null) => boolean;
+    /** The JVM classes this file's functions compile into, e.g. `com.example.CardsKt`. */
+    fileClassNames: string[];
+    /** The function names declared in this file. */
+    functionNames: string[];
+}
+
+/**
+ * The function in this file that [previewId] is a preview of, or null when it is not one of
+ * this file's. The manifest decides when it lists the id: its `functionName` is exact, so
+ * `Card_Dark` is never mistaken for a sweep of `Card`. An id the manifest does not list (a
+ * device sweep, or no manifest yet) falls back to the longest declared function the id
+ * starts with, which still prefers `Card_Dark` over `Card` for `Cls.Card_Dark_192dp`.
+ */
+export function functionForFinding(
+    previewId: string,
+    file: FileFunctions,
+): string | null {
+    const listed = file.manifestPreviews.find((p) => p.id === previewId);
+    if (listed) {
+        return file.isThisFile(listed.sourceFile) &&
+            file.functionNames.includes(listed.functionName)
+            ? listed.functionName
+            : null;
+    }
+    const classNames = new Set(file.fileClassNames);
+    for (const p of file.manifestPreviews) {
+        if (file.isThisFile(p.sourceFile)) {
+            classNames.add(p.className);
+        }
+    }
+    let best: string | null = null;
+    for (const className of classNames) {
+        for (const fn of file.functionNames) {
+            if (
+                previewIdMatchesFunction(previewId, className, fn) &&
+                (best === null || fn.length > best.length)
+            ) {
+                best = fn;
+            }
+        }
+    }
+    return best;
+}
+
+/** Whether a manifest `sourceFile` (package-qualified or module-relative) names [filePath]. */
+export function sourceFileMatches(
+    sourceFile: string | null,
+    filePath: string,
+    packageName: string | null,
+): boolean {
+    if (!sourceFile) {
+        return false;
+    }
+    const norm = (p: string) => p.replace(/\\/g, "/");
+    const file = norm(filePath);
+    const source = norm(sourceFile);
+    if (file === source || file.endsWith(`/${source}`)) {
+        return true;
+    }
+    const base = file.slice(file.lastIndexOf("/") + 1);
+    return packageName !== null
+        ? source === `${packageName.replace(/\./g, "/")}/${base}`
+        : source === base;
+}
+
+/** The `package` a Kotlin source declares; null for the default package. */
+export function kotlinPackageName(text: string): string | null {
+    const m = /^\s*package\s+([\w.]+)/m.exec(text);
+    return m ? m[1] : null;
+}
+
+/** The facade class a Kotlin file's top-level functions compile into (`CardsKt`, or `@file:JvmName`). */
+export function kotlinFileClassName(text: string, filePath: string): string {
+    const jvmName = /@file:JvmName\(\s*"([^"]+)"\s*\)/.exec(text);
+    const base = path.basename(filePath, path.extname(filePath));
+    const simple = jvmName
+        ? jvmName[1]
+        : `${base.charAt(0).toUpperCase()}${base.slice(1)}Kt`;
+    const pkg = kotlinPackageName(text);
+    return pkg ? `${pkg}.${simple}` : simple;
+}
+
+/** A `fun` declaration found by [scanFunctionDeclarations]. */
+export interface ScannedFunction {
+    functionName: string;
+    /** 0-based line of the `fun` keyword. */
+    line: number;
+    /** 0-based column of the name. */
+    nameStart: number;
+}
+
+/**
+ * The `fun` declarations in Kotlin [text], by a line scan. This is the fallback for when no
+ * Kotlin language server provides document symbols: it only has to find the line of a function
+ * a finding already names, so it does not parse, and a declaration it over-reports (one that is
+ * not a preview) gets no finding.
+ */
+export function scanFunctionDeclarations(text: string): ScannedFunction[] {
+    const out: ScannedFunction[] = [];
+    const pattern =
+        /^(\s*(?:@[\w.]+(?:\([^)]*\))?\s+)*(?:(?:private|internal|public|protected|override|open|inline|suspend|actual|expect)\s+)*fun\s+(?:<[^>]*>\s*)?(?:[\w.]+(?:<[^>]*>)?\??\.)?)(`[^`]+`|\w+)\s*\(/;
+    const lines = text.split(/\r?\n/);
+    let inBlockComment = false;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (inBlockComment) {
+            if (line.includes("*/")) inBlockComment = false;
+            continue;
+        }
+        const trimmed = line.trimStart();
+        if (trimmed.startsWith("//")) continue;
+        if (trimmed.startsWith("/*")) {
+            if (!trimmed.includes("*/")) inBlockComment = true;
+            continue;
+        }
+        const m = pattern.exec(line);
+        if (m) {
+            out.push({
+                functionName: m[2].replace(/`/g, ""),
+                line: i,
+                nameStart: m[1].length,
+            });
+        }
+    }
+    return out;
+}
+
 /** The Problems-panel message for [finding]. */
 export function findingMessage(finding: GuidelineFinding): string {
     const confidence =
