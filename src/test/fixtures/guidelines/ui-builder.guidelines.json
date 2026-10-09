@@ -1,0 +1,24 @@
+{
+    "schema": "compose-ui-builder/catalog-guidelines/v1",
+    "catalog": "wear-m3",
+    "platform": "wear",
+    "version": 1,
+    "rules": [
+        {
+            "id": "wear.layout.time-text-shown",
+            "kind": "structure",
+            "severity": "info",
+            "guidance": "g",
+            "check": "?",
+            "source": "https://developer.android.com/design/ui/wear/guides/surfaces/apps/layouts"
+        },
+        {
+            "id": "wear.touch-target-48dp",
+            "kind": "structure",
+            "severity": "warning",
+            "guidance": "g",
+            "check": "?",
+            "source": "https://developer.android.com/design/ui/wear/guides/foundations/touch-targets"
+        }
+    ]
+}

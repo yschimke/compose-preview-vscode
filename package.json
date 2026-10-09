@@ -107,6 +107,21 @@
         },
         "commands": [
             {
+                "command": "composePreview.checkDesignGuidelines",
+                "title": "Check Design Guidelines",
+                "category": "Compose Preview"
+            },
+            {
+                "command": "composePreview.setOpenRouterKey",
+                "title": "Set OpenRouter Key (Design Guidelines)",
+                "category": "Compose Preview"
+            },
+            {
+                "command": "composePreview.clearOpenRouterKey",
+                "title": "Forget OpenRouter Key (Design Guidelines)",
+                "category": "Compose Preview"
+            },
+            {
                 "command": "composePreview.refresh",
                 "title": "Refresh Previews",
                 "category": "Compose Preview",
@@ -589,6 +604,33 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Enable early, unstable preview features in the VS Code panel, including focus-mode diffs, focus inspector extension layers, a11y overlay controls, recording, diff-all commands, and the render-history timeline. Focus mode and live interactive previews remain available when this is off."
+                },
+                "composePreview.guidelines.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Enable `Compose Preview: Check Design Guidelines`, which runs `compose-preview guidelines` (compose-ai-tools 2.38.0+) on the active file's previews and shows broken guidelines in the Problems panel. Needs an OpenRouter key (`Compose Preview: Set OpenRouter Key`)."
+                },
+                "composePreview.guidelines.model": {
+                    "type": "string",
+                    "default": "deepseek/deepseek-v4.1-flash",
+                    "markdownDescription": "OpenRouter model the design-guidelines check asks (passed as `--model`)."
+                },
+                "composePreview.guidelines.maxCost": {
+                    "type": "number",
+                    "default": 0.1,
+                    "minimum": 0,
+                    "markdownDescription": "Stop a design-guidelines check once this many US dollars are spent (passed as `--max-cost`). Previews left are reported unchecked."
+                },
+                "composePreview.guidelines.surface": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "screen",
+                        "widget",
+                        "component"
+                    ],
+                    "default": "auto",
+                    "markdownDescription": "Which of the catalog's rules to ask: `auto` lets the CLI decide per preview; `screen`, `widget` or `component` asks that surface's rules for every preview (passed as `--surface`)."
                 },
                 "composePreview.bundleCliPath": {
                     "type": "string",

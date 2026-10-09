@@ -34,6 +34,9 @@ import { ActivityIconCodeLensProvider } from "./activityIconCodeLensProvider";
 import { ResourceReferenceHoverProvider } from "./resourceReferenceHoverProvider";
 import { ResourceReferenceCodeLensProvider } from "./resourceReferenceCodeLensProvider";
 import { PreviewA11yDiagnostics } from "./previewA11yDiagnostics";
+import { PreviewGuidelinesDiagnostics } from "./previewGuidelinesDiagnostics";
+import { checkDesignGuidelines } from "./guidelinesCheck";
+import { GuidelinesKeyStore } from "./guidelinesKey";
 import { PreviewDoctorDiagnostics } from "./previewDoctorDiagnostics";
 import { moduleRelativeSourcePath, previewSourceMatches } from "./sourcePath";
 import { visiblePreviewsForFile } from "./previewScope";
@@ -2043,6 +2046,17 @@ export async function activate(
     const hoverProvider = new PreviewHoverProvider(registry, detectLog);
     const codeLensProvider = new PreviewCodeLensProvider(registry, detectLog);
     const a11yDiagnostics = new PreviewA11yDiagnostics(registry, detectLog);
+    const guidelinesLog = (msg: string) => {
+        if (logFilter.shouldEmitInformational(msg)) {
+            outputChannel.appendLine(msg);
+        }
+    };
+    const guidelinesDiagnostics = new PreviewGuidelinesDiagnostics(
+        registry,
+        gradleService,
+        guidelinesLog,
+    );
+    const guidelinesKeys = new GuidelinesKeyStore(context.secrets);
     const doctorDiagnostics = new PreviewDoctorDiagnostics(
         gradleService,
         workspaceRoot,
@@ -2134,7 +2148,37 @@ export async function activate(
         resourceReferenceCodeLensProvider,
         gutterDecorations,
         a11yDiagnostics,
+        guidelinesDiagnostics,
         doctorDiagnostics,
+        vscode.commands.registerCommand(
+            "composePreview.checkDesignGuidelines",
+            async () => {
+                if (!gradleService) {
+                    void vscode.window.showWarningMessage(
+                        "Compose Preview has not found a Gradle project in this workspace yet.",
+                    );
+                    return;
+                }
+                await checkDesignGuidelines(
+                    gradleService,
+                    guidelinesKeys,
+                    () => guidelinesDiagnostics.refreshAll(),
+                    guidelinesLog,
+                );
+            },
+        ),
+        vscode.commands.registerCommand("composePreview.setOpenRouterKey", () =>
+            guidelinesKeys.prompt(),
+        ),
+        vscode.commands.registerCommand(
+            "composePreview.clearOpenRouterKey",
+            async () => {
+                await guidelinesKeys.clear();
+                void vscode.window.showInformationMessage(
+                    "OpenRouter key removed from this machine.",
+                );
+            },
+        ),
         { dispose: () => registry.dispose() },
     );
 
