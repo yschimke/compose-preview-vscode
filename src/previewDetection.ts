@@ -5,6 +5,11 @@ export interface DetectedPreview {
     functionName: string;
     funLineNumber: number;
     nameRange: vscode.Range;
+    /**
+     * The classes and objects the function is declared in, outermost first; `[]` at top level.
+     * Undefined when the language server answered with flat symbols, which carry no nesting.
+     */
+    containers?: string[];
 }
 
 /** Flat interface over DocumentSymbol and SymbolInformation. */
@@ -14,6 +19,8 @@ interface FnLike {
     funLine: number;
     selectionRange: vscode.Range;
     children?: FnLike[];
+    /** From `SymbolInformation`, which is flat: no nesting to read a container from. */
+    flat?: boolean;
 }
 
 /**
@@ -53,7 +60,7 @@ export async function detectFunctions(
     }
 
     const out: DetectedPreview[] = [];
-    const visit = (s: FnLike) => {
+    const visit = (s: FnLike, containers: string[] | undefined) => {
         const isFn =
             s.kind === vscode.SymbolKind.Function ||
             s.kind === vscode.SymbolKind.Method;
@@ -62,12 +69,36 @@ export async function detectFunctions(
                 functionName: s.name.replace(/\(.*$/, "").trim(),
                 funLineNumber: s.funLine,
                 nameRange: s.selectionRange,
+                containers,
             });
         }
-        s.children?.forEach(visit);
+        const inside =
+            containers !== undefined && CONTAINER_KINDS.has(s.kind)
+                ? [...containers, containerName(s.name)]
+                : containers;
+        s.children?.forEach((c) => visit(c, inside));
     };
-    symbols.forEach(visit);
+    symbols.forEach((s) => visit(s, s.flat ? undefined : []));
     return out;
+}
+
+/** Symbol kinds a Kotlin function can be a member of: classes, interfaces, objects, enums. */
+const CONTAINER_KINDS = new Set([
+    vscode.SymbolKind.Class,
+    vscode.SymbolKind.Interface,
+    vscode.SymbolKind.Object,
+    vscode.SymbolKind.Enum,
+    vscode.SymbolKind.Struct,
+]);
+
+/** A class symbol's simple name: `Outer<T>` is `Outer`, an unnamed companion `Companion`. */
+function containerName(symbolName: string): string {
+    const name = symbolName.replace(/<.*$/, "").trim();
+    const companion = /^companion\s+object\b\s*(\w*)/.exec(name);
+    if (companion) {
+        return companion[1] || "Companion";
+    }
+    return name.replace(/^(?:object|class|interface)\s+/, "");
 }
 
 async function fetchSymbols(
@@ -118,5 +149,6 @@ function siToFnLike(s: vscode.SymbolInformation): FnLike {
         kind: s.kind,
         funLine: s.location.range.start.line,
         selectionRange: s.location.range,
+        flat: true,
     };
 }

@@ -135,23 +135,27 @@ export class PreviewGuidelinesDiagnostics implements vscode.Disposable {
             isThisFile: (sourceFile: string | null) =>
                 sourceFileMatches(sourceFile, doc.uri.fsPath, packageName),
             fileClassNames: [kotlinFileClassName(text, doc.uri.fsPath)],
-            functionNames: detected.map((d) => d.functionName),
+            packageName,
+            functions: detected.map((d) => ({
+                functionName: d.functionName,
+                containers: d.containers,
+            })),
         };
-        const byFunction = new Map<string, GuidelineFinding[]>();
+        // Keyed by the declaration, not its name: a preview id is `<class>.<function>`, and
+        // one file can declare the same function name in several classes or objects.
+        const byFunction = new Map<number, GuidelineFinding[]>();
         for (const f of loaded.findings) {
-            const fn = functionForFinding(f.previewId, file);
-            if (fn !== null) {
-                byFunction.set(fn, [...(byFunction.get(fn) ?? []), f]);
+            const index = functionForFinding(f.previewId, file);
+            if (index !== null) {
+                byFunction.set(index, [...(byFunction.get(index) ?? []), f]);
             }
         }
         const diagnostics: vscode.Diagnostic[] = [];
-        const placed = new Set<string>();
-        for (const det of detected) {
-            const findings = byFunction.get(det.functionName);
-            if (!findings || placed.has(det.functionName)) {
-                continue;
+        detected.forEach((det, index) => {
+            const findings = byFunction.get(index);
+            if (!findings) {
+                return;
             }
-            placed.add(det.functionName);
             const line = det.funLineNumber;
             const range = new vscode.Range(
                 line,
@@ -162,7 +166,7 @@ export class PreviewGuidelinesDiagnostics implements vscode.Disposable {
             for (const f of findings) {
                 diagnostics.push(this.diagnostic(f, range, module, manifest));
             }
-        }
+        });
         if (diagnostics.length === 0) {
             this.collection.delete(doc.uri);
         } else {
@@ -180,6 +184,7 @@ export class PreviewGuidelinesDiagnostics implements vscode.Disposable {
         }
         return scanFunctionDeclarations(doc.getText()).map((f) => ({
             functionName: f.functionName,
+            containers: f.containers,
             funLineNumber: f.line,
             nameRange: new vscode.Range(
                 f.line,
