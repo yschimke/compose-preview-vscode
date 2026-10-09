@@ -168,53 +168,115 @@ export interface PreviewFunctionRef {
     sourceFile: string | null;
 }
 
+/** A function declared in the open file, and where in it. */
+export interface DeclaredFunction {
+    functionName: string;
+    /**
+     * The simple names of the classes and objects the function is declared in, outermost
+     * first (`["Outer", "Companion"]`); `[]` for a top-level function. Undefined when the
+     * source of the symbols could not tell, which places by function name alone.
+     */
+    containers?: string[];
+}
+
 /** What is known about one open Kotlin file when placing findings on its functions. */
 export interface FileFunctions {
     /** The previews of the module's manifest, if one has been written; may be empty. */
     manifestPreviews: PreviewFunctionRef[];
     /** Whether a manifest `sourceFile` is this file. */
     isThisFile: (sourceFile: string | null) => boolean;
-    /** The JVM classes this file's functions compile into, e.g. `com.example.CardsKt`. */
+    /** The JVM classes this file's top-level functions compile into, e.g. `com.example.CardsKt`. */
     fileClassNames: string[];
-    /** The function names declared in this file. */
-    functionNames: string[];
+    /** The `package` the file declares; null for the default package. */
+    packageName: string | null;
+    /** The functions declared in this file, in document order. */
+    functions: DeclaredFunction[];
+}
+
+/** The class names a function declared in [containers] compiles into: dotted and binary. */
+function nestedClassNames(
+    containers: string[],
+    packageName: string | null,
+): string[] {
+    const prefix = packageName ? `${packageName}.` : "";
+    return [
+        `${prefix}${containers.join(".")}`,
+        `${prefix}${containers.join("$")}`,
+    ];
 }
 
 /**
- * The function in this file that [previewId] is a preview of, or null when it is not one of
- * this file's. The manifest decides when it lists the id: its `functionName` is exact, so
- * `Card_Dark` is never mistaken for a sweep of `Card`. An id the manifest does not list (a
- * device sweep, or no manifest yet) falls back to the longest declared function the id
- * starts with, which still prefers `Card_Dark` over `Card` for `Cls.Card_Dark_192dp`.
+ * The function in this file that [previewId] is a preview of, as an index into
+ * `file.functions`, or null when it is not one of this file's. A preview id is
+ * `<className>.<functionName>`, so the class decides between same-named functions declared in
+ * different classes or objects of one file. The manifest decides when it lists the id: its
+ * `functionName` is exact, so `Card_Dark` is never mistaken for a sweep of `Card`. An id the
+ * manifest does not list (a device sweep, or no manifest yet) falls back to the longest
+ * declared `<class>.<function>` the id starts with, which still prefers `Card_Dark` over
+ * `Card` for `Cls.Card_Dark_192dp`.
  */
 export function functionForFinding(
     previewId: string,
     file: FileFunctions,
-): string | null {
+): number | null {
+    // Classes the manifest places in this file that no declared container accounts for (an
+    // unusual facade name, say) are taken to hold its top-level functions.
+    const nested = new Set(
+        file.functions.flatMap((f) =>
+            f.containers && f.containers.length > 0
+                ? nestedClassNames(f.containers, file.packageName)
+                : [],
+        ),
+    );
+    const topLevel = new Set(file.fileClassNames);
+    for (const p of file.manifestPreviews) {
+        if (file.isThisFile(p.sourceFile) && !nested.has(p.className)) {
+            topLevel.add(p.className);
+        }
+    }
+    const allClasses = new Set([...topLevel, ...nested]);
+    const classNamesOf = (f: DeclaredFunction): Set<string> => {
+        if (f.containers === undefined) return allClasses;
+        if (f.containers.length === 0) return topLevel;
+        return new Set(nestedClassNames(f.containers, file.packageName));
+    };
+
     const listed = file.manifestPreviews.find((p) => p.id === previewId);
     if (listed) {
-        return file.isThisFile(listed.sourceFile) &&
-            file.functionNames.includes(listed.functionName)
-            ? listed.functionName
-            : null;
-    }
-    const classNames = new Set(file.fileClassNames);
-    for (const p of file.manifestPreviews) {
-        if (file.isThisFile(p.sourceFile)) {
-            classNames.add(p.className);
+        if (!file.isThisFile(listed.sourceFile)) {
+            return null;
         }
+        const named = file.functions
+            .map((f, i) => ({ f, i }))
+            .filter(({ f }) => f.functionName === listed.functionName);
+        const inClass = named.find(({ f }) =>
+            classNamesOf(f).has(listed.className),
+        );
+        if (inClass) {
+            return inClass.i;
+        }
+        // A class name the file's declarations cannot reproduce still places on the one
+        // function of that name; with several, guessing would put it on the wrong one.
+        return named.length === 1 ? named[0].i : null;
     }
-    let best: string | null = null;
-    for (const className of classNames) {
-        for (const fn of file.functionNames) {
+    let best: number | null = null;
+    let bestLength = -1;
+    file.functions.forEach((f, i) => {
+        for (const className of classNamesOf(f)) {
+            const length = className.length + 1 + f.functionName.length;
             if (
-                previewIdMatchesFunction(previewId, className, fn) &&
-                (best === null || fn.length > best.length)
+                previewIdMatchesFunction(
+                    previewId,
+                    className,
+                    f.functionName,
+                ) &&
+                length > bestLength
             ) {
-                best = fn;
+                best = i;
+                bestLength = length;
             }
         }
-    }
+    });
     return best;
 }
 
@@ -259,6 +321,8 @@ export function kotlinFileClassName(text: string, filePath: string): string {
 /** A `fun` declaration found by [scanFunctionDeclarations]. */
 export interface ScannedFunction {
     functionName: string;
+    /** The classes and objects it is declared in, outermost first; `[]` at top level. */
+    containers: string[];
     /** 0-based line of the `fun` keyword. */
     line: number;
     /** 0-based column of the name. */
@@ -277,6 +341,12 @@ export function scanFunctionDeclarations(text: string): ScannedFunction[] {
         /^(\s*(?:@[\w.]+(?:\([^)]*\))?\s+)*(?:(?:private|internal|public|protected|override|open|inline|suspend|actual|expect)\s+)*fun\s+(?:<[^>]*>\s*)?(?:[\w.]+(?:<[^>]*>)?\??\.)?)(`[^`]+`|\w+)\s*\(/;
     const lines = text.split(/\r?\n/);
     let inBlockComment = false;
+    // The enclosing class/object bodies, by the brace depth that opened each, so a function
+    // keeps the class it is declared in. `pending` is a declaration whose `{` is still to come.
+    const stack: { name: string; depth: number }[] = [];
+    let depth = 0;
+    let pending: string | null = null;
+    let pendingParens = 0;
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (inBlockComment) {
@@ -293,12 +363,70 @@ export function scanFunctionDeclarations(text: string): ScannedFunction[] {
         if (m) {
             out.push({
                 functionName: m[2].replace(/`/g, ""),
+                containers: stack.map((c) => c.name),
                 line: i,
                 nameStart: m[1].length,
             });
+            // A class with no body never opens one; this function's `{` is its own.
+            pending = null;
+        }
+        const code = kotlinCodeOf(line);
+        const declared = containerDeclaredIn(code);
+        if (declared !== null && !m) {
+            pending = declared;
+            pendingParens = 0;
+        }
+        let opened = false;
+        for (const ch of code) {
+            if (ch === "(") pendingParens++;
+            else if (ch === ")") pendingParens--;
+            else if (ch === "{") {
+                depth++;
+                opened = true;
+                if (pending !== null) {
+                    stack.push({ name: pending, depth });
+                    pending = null;
+                }
+            } else if (ch === "}") {
+                while (
+                    stack.length > 0 &&
+                    stack[stack.length - 1].depth >= depth
+                ) {
+                    stack.pop();
+                }
+                depth = Math.max(0, depth - 1);
+            }
+        }
+        // `class Point(val x: Int)` ends here, bodiless; a header still running on does not.
+        if (
+            pending !== null &&
+            !opened &&
+            pendingParens <= 0 &&
+            !/[,:(=]\s*$/.test(code)
+        ) {
+            pending = null;
         }
     }
     return out;
+}
+
+/** [line] with its string literals and comments blanked, so only code braces count. */
+function kotlinCodeOf(line: string): string {
+    return line
+        .replace(/"(?:\\.|[^"\\])*"/g, '""')
+        .replace(/'(?:\\.|[^'\\])*'/g, "''")
+        .replace(/\/\*.*?\*\//g, "")
+        .replace(/\/\/.*$/, "");
+}
+
+/** The simple name of a class, interface or named/companion object declared in [code]. */
+function containerDeclaredIn(code: string): string | null {
+    const companion = /\bcompanion\s+object\b(?:\s+(\w+))?/.exec(code);
+    if (companion) {
+        return companion[1] ?? "Companion";
+    }
+    const m = /\b(?:class|interface|object)\s+(`[^`]+`|\w+)/.exec(code);
+    return m ? m[1].replace(/`/g, "") : null;
 }
 
 /** The Problems-panel message for [finding]. */

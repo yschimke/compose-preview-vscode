@@ -104,8 +104,21 @@ describe("guidelinesResults", () => {
             isThisFile: (sf: string | null) =>
                 sourceFileMatches(sf, doc, "com.example"),
             fileClassNames: [cls],
-            functionNames: ["Card", "Card_Dark", "Other"],
+            packageName: "com.example",
+            functions: [
+                { functionName: "Card", containers: [] },
+                { functionName: "Card_Dark", containers: [] },
+                { functionName: "Other", containers: [] },
+            ],
         });
+        /** The name of the function [previewId] lands on, for readable assertions. */
+        const placed = (
+            previewId: string,
+            f: Parameters<typeof functionForFinding>[1],
+        ) => {
+            const i = functionForFinding(previewId, f);
+            return i === null ? null : f.functions[i].functionName;
+        };
 
         it("takes the function from the manifest, not the id's prefix", () => {
             const f = file([
@@ -122,31 +135,19 @@ describe("guidelinesResults", () => {
                     sourceFile: "com/example/Cards.kt",
                 },
             ]);
-            assert.strictEqual(
-                functionForFinding(`${cls}.Card_Dark`, f),
-                "Card_Dark",
-            );
-            assert.strictEqual(functionForFinding(`${cls}.Card`, f), "Card");
+            assert.strictEqual(placed(`${cls}.Card_Dark`, f), "Card_Dark");
+            assert.strictEqual(placed(`${cls}.Card`, f), "Card");
         });
 
         it("prefers the longest function when the manifest does not list the id", () => {
             const f = file([]);
+            assert.strictEqual(placed(`${cls}.Card_Dark`, f), "Card_Dark");
             assert.strictEqual(
-                functionForFinding(`${cls}.Card_Dark`, f),
+                placed(`${cls}.Card_Dark_192dp`, f),
                 "Card_Dark",
             );
-            assert.strictEqual(
-                functionForFinding(`${cls}.Card_Dark_192dp`, f),
-                "Card_Dark",
-            );
-            assert.strictEqual(
-                functionForFinding(`${cls}.Card_192dp`, f),
-                "Card",
-            );
-            assert.strictEqual(
-                functionForFinding("com.other.CardsKt.Card", f),
-                null,
-            );
+            assert.strictEqual(placed(`${cls}.Card_192dp`, f), "Card");
+            assert.strictEqual(placed("com.other.CardsKt.Card", f), null);
         });
 
         it("drops a listed preview whose source is another file", () => {
@@ -158,7 +159,106 @@ describe("guidelinesResults", () => {
                     sourceFile: "com/example/Elsewhere.kt",
                 },
             ]);
-            assert.strictEqual(functionForFinding(`${cls}.Card`, f), null);
+            assert.strictEqual(placed(`${cls}.Card`, f), null);
+        });
+
+        describe("same-named functions in different classes of one file", () => {
+            const src = "com/example/Cards.kt";
+            // fun Card() at top level, in object Light, and in object Dark's companion.
+            const functions = [
+                { functionName: "Card", containers: [] },
+                { functionName: "Card", containers: ["Light"] },
+                { functionName: "Card", containers: ["Dark", "Companion"] },
+            ];
+            const scoped = (manifestPreviews: Parameters<typeof file>[0]) => ({
+                ...file(manifestPreviews),
+                functions,
+            });
+
+            it("places a listed preview on the function of its class", () => {
+                const f = scoped([
+                    {
+                        id: `${cls}.Card`,
+                        className: cls,
+                        functionName: "Card",
+                        sourceFile: src,
+                    },
+                    {
+                        id: "com.example.Light.Card",
+                        className: "com.example.Light",
+                        functionName: "Card",
+                        sourceFile: src,
+                    },
+                    {
+                        id: "com.example.Dark$Companion.Card",
+                        className: "com.example.Dark$Companion",
+                        functionName: "Card",
+                        sourceFile: src,
+                    },
+                ]);
+                assert.strictEqual(functionForFinding(`${cls}.Card`, f), 0);
+                assert.strictEqual(
+                    functionForFinding("com.example.Light.Card", f),
+                    1,
+                );
+                assert.strictEqual(
+                    functionForFinding("com.example.Dark$Companion.Card", f),
+                    2,
+                );
+            });
+
+            it("places an unlisted id by its class prefix", () => {
+                const f = scoped([]);
+                assert.strictEqual(
+                    functionForFinding("com.example.Light.Card_192dp", f),
+                    1,
+                );
+                assert.strictEqual(
+                    functionForFinding("com.example.Dark.Companion.Card", f),
+                    2,
+                );
+                assert.strictEqual(
+                    functionForFinding(`${cls}.Card_192dp`, f),
+                    0,
+                );
+                assert.strictEqual(
+                    functionForFinding("com.example.Other.Card", f),
+                    null,
+                );
+            });
+
+            it("takes a manifest class no declaration accounts for as the file facade", () => {
+                const f = scoped([
+                    {
+                        id: "com.example.Mystery.Card",
+                        className: "com.example.Mystery",
+                        functionName: "Card",
+                        sourceFile: src,
+                    },
+                ]);
+                assert.strictEqual(
+                    functionForFinding("com.example.Mystery.Card", f),
+                    0,
+                );
+            });
+
+            it("still places by name when the symbols carry no nesting", () => {
+                const f = {
+                    ...file([
+                        {
+                            id: "com.example.Light.Card",
+                            className: "com.example.Light",
+                            functionName: "Card",
+                            sourceFile: src,
+                        },
+                    ]),
+                    functions: [{ functionName: "Card" }],
+                };
+                assert.strictEqual(
+                    functionForFinding("com.example.Light.Card", f),
+                    0,
+                );
+            });
         });
 
         it("matches package-qualified and module-relative source paths", () => {
@@ -220,10 +320,57 @@ describe("guidelinesResults", () => {
                     ["Other", 12],
                 ],
             );
+            assert.ok(
+                scanFunctionDeclarations(text).every(
+                    (f) => f.containers.length === 0,
+                ),
+            );
             const card = scanFunctionDeclarations(text)[1];
             assert.strictEqual(
                 text.split("\n")[7].slice(card.nameStart, card.nameStart + 4),
                 "Card",
+            );
+        });
+
+        it("keeps the class or object a scanned function is declared in", () => {
+            const text = [
+                "package com.example",
+                "",
+                "data class Point(val x: Int)",
+                "",
+                "@Composable fun Card() {",
+                '    Text("} not a brace {")',
+                "}",
+                "",
+                "object Light {",
+                "    @Composable fun Card() {",
+                "        Box { }",
+                "    }",
+                "}",
+                "",
+                "class Dark(",
+                "    val x: Int,",
+                ") {",
+                "    companion object {",
+                "        @Composable fun Card() {}",
+                "    }",
+                "    fun Member() {}",
+                "}",
+                "",
+                "fun After() {}",
+            ].join("\n");
+            assert.deepStrictEqual(
+                scanFunctionDeclarations(text).map((f) => [
+                    f.functionName,
+                    f.containers,
+                ]),
+                [
+                    ["Card", []],
+                    ["Card", ["Light"]],
+                    ["Card", ["Dark", "Companion"]],
+                    ["Member", ["Dark"]],
+                    ["After", []],
+                ],
             );
         });
     });
