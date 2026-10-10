@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.50.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.49.0...v1.50.0) (2026-10-10)
+
+
+### Features
+
+* **guidelines:** design-guidelines findings in the Problems panel, and a check command ([#56](https://github.com/yschimke/compose-preview-vscode/issues/56)) ([a990c54](https://github.com/yschimke/compose-preview-vscode/commit/a990c54df4e4752971bcde4a50f18bf05ddb0f04))
+
+
+### Bug Fixes
+
+* **guidelines:** keep the key's CLI path and spend limit out of workspace settings ([#59](https://github.com/yschimke/compose-preview-vscode/issues/59)) ([9d07206](https://github.com/yschimke/compose-preview-vscode/commit/9d072067f21ce3e9152c318eb3dbfc5cafc41dc2))
+* **guidelines:** place findings by class and function, not function name alone ([#58](https://github.com/yschimke/compose-preview-vscode/issues/58)) ([1e59383](https://github.com/yschimke/compose-preview-vscode/commit/1e5938322ceabbf2e308a5b4e3e432cd42468c87))
+* **guidelines:** place findings without the preview panel, and bootstrap before the check ([#57](https://github.com/yschimke/compose-preview-vscode/issues/57)) ([431b066](https://github.com/yschimke/compose-preview-vscode/commit/431b066cce29eccc5cea2f11537a4e76cff0cc50))
+* resolve extension runtime pins through the latest tools BOM ([#51](https://github.com/yschimke/compose-preview-vscode/issues/51)) ([2e940ef](https://github.com/yschimke/compose-preview-vscode/commit/2e940efb1e7ad7fe9276b2e694fa0eb391eba51b))
+* track published plugin markers with reviewed Renovate upgrades ([403be90](https://github.com/yschimke/compose-preview-vscode/commit/403be906e7b03fc2d1136e64d5a5b556d9b8532e))
+
 ## [1.49.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.48.0...v1.49.0) (2026-09-26)
 
 
