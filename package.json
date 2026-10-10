@@ -619,7 +619,8 @@
                     "type": "number",
                     "default": 0.1,
                     "minimum": 0,
-                    "markdownDescription": "Stop a design-guidelines check once this many US dollars are spent (passed as `--max-cost`). Previews left are reported unchecked."
+                    "scope": "application",
+                    "markdownDescription": "Stop a design-guidelines check once this many US dollars are spent (passed as `--max-cost`). Previews left are reported unchecked. User settings only: the check spends your OpenRouter key, so a workspace's `.vscode/settings.json` cannot raise the limit."
                 },
                 "composePreview.guidelines.surface": {
                     "type": "string",
@@ -635,8 +636,8 @@
                 "composePreview.bundleCliPath": {
                     "type": "string",
                     "default": "",
-                    "scope": "machine-overridable",
-                    "markdownDescription": "Absolute path to the `compose-preview` CLI launcher used by `Compose Preview: Open Preview Bundle…`. Empty (default) falls back to `$COMPOSE_PREVIEW_CLI` and then `compose-preview` on PATH (the install script's default landing spot is `~/.local/bin/compose-preview`)."
+                    "scope": "machine",
+                    "markdownDescription": "Absolute path to the `compose-preview` CLI launcher used by `Compose Preview: Open Preview Bundle…` and the design-guidelines check. Empty (default) falls back to `$COMPOSE_PREVIEW_CLI` and then `compose-preview` on PATH (the install script's default landing spot is `~/.local/bin/compose-preview`). User (or remote machine) settings only: the CLI is handed your OpenRouter key, so a workspace's `.vscode/settings.json` cannot point it at another binary."
                 },
                 "composePreview.androidSdkPath": {
                     "type": "string",
