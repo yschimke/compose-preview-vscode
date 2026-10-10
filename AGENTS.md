@@ -17,6 +17,14 @@ them together is that every compose-ai-tools POM *imports* the daemon BOM, so a
 consumer that names only the plugin cannot skew from the daemon that plugin was
 compiled against — and this repository names only the plugin.
 
+## PR workflow
+
+- **Merge only when explicitly requested.** Only merge a PR or enable auto-merge
+  when the user specifically asks. If the request or intended PRs are unclear,
+  ask for clarification before merging. A request to implement, fix, review,
+  or open a PR does not by itself authorize merging. Honor required checks,
+  reviews, and branch protections.
+
 ## The one rule that is different here
 
 **This repo cannot build the plugin it depends on.** That is the whole point of the
@@ -30,7 +38,7 @@ releases*, so:
 - **Bump it in its own PR.** Adopting a new plugin release is a reviewable change, not
   a side effect of a release train. In the monorepo the version came from
   `.release-please-manifest.json` and moved on its own. Renovate now proposes exact published
-  plugin-marker pins in a separate PR; those upgrades remain reviewed and never automerge.
+  plugin-marker pins in a separate PR; Renovate does not auto-merge those upgrades.
 - **The committed pin must be a release, never a `-SNAPSHOT`.** The `Plugin Pin`
   workflow rejects a SNAPSHOT and fails if the pinned version does not resolve on
   Maven Central.
