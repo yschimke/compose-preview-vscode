@@ -13,7 +13,13 @@ import * as path from "path";
 
 const manifest = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, "../../package.json"), "utf8"),
-) as { engines: { vscode: string }; devDependencies: Record<string, string> };
+) as {
+    engines: { vscode: string };
+    devDependencies: Record<string, string>;
+    contributes: {
+        configuration: { properties: Record<string, { scope?: string }> };
+    };
+};
 
 function parts(version: string): number[] {
     const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
@@ -53,6 +59,25 @@ describe("extension manifest", () => {
         assert.ok(
             compare(types, floor) <= 0,
             `@types/vscode ${types} is newer than the engines.vscode floor ${floor}; bumping the types alone compiles against APIs older editors lack`,
+        );
+    });
+
+    // Settings that decide what receives the person's OpenRouter key, or how
+    // much of it is spent, must not be settable from a repository's
+    // `.vscode/settings.json`: `machine` and `application` settings are read
+    // from user (or remote machine) settings only, and VS Code ignores a
+    // workspace value for them.
+    it("keeps the key's binary and spend limit out of workspace settings", () => {
+        const properties = manifest.contributes.configuration.properties;
+        assert.strictEqual(
+            properties["composePreview.bundleCliPath"].scope,
+            "machine",
+            "the CLI at bundleCliPath is spawned with the OpenRouter key in its environment",
+        );
+        assert.strictEqual(
+            properties["composePreview.guidelines.maxCost"].scope,
+            "application",
+            "maxCost caps spend on the person's own OpenRouter key",
         );
     });
 });
