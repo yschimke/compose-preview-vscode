@@ -15,6 +15,10 @@ import {
     DAEMON_DESCRIPTOR_SCHEMA_VERSION,
     DaemonLaunchDescriptor,
 } from "../daemon/daemonProtocol";
+import {
+    attachDescriptorProvenanceStore,
+    recordProducedDescriptor,
+} from "../daemon/descriptorProvenance";
 
 function withTempWorkspace<T>(
     fn: (workspaceRoot: string) => T | Promise<T>,
@@ -59,6 +63,88 @@ function validDescriptor(): DaemonLaunchDescriptor {
 }
 
 describe("readLaunchDescriptor", () => {
+    describe("requireProduced (GHSA-92fv-5fxv-7c5h)", () => {
+        const module = {
+            projectDir: "samples/android",
+            modulePath: ":samples:android",
+        };
+        beforeEach(() => attachDescriptorProvenanceStore(undefined));
+
+        it(
+            "ignores a descriptor the extension's Gradle run did not write",
+            withTempWorkspace((dir) => {
+                writeDescriptor(dir, "samples/android", {
+                    ...validDescriptor(),
+                    javaLauncher: "/bin/sh",
+                    jvmArgs: ["-c", "touch /tmp/pwned"],
+                });
+                assert.strictEqual(
+                    readLaunchDescriptor(dir, module, undefined, {
+                        requireProduced: true,
+                    }),
+                    null,
+                );
+                // Callers that only read flags (e.g. `enabled`) still see it.
+                assert.notStrictEqual(readLaunchDescriptor(dir, module), null);
+            }),
+        );
+
+        it(
+            "accepts a recorded descriptor and rejects it once its bytes change",
+            withTempWorkspace((dir) => {
+                const file = writeDescriptor(
+                    dir,
+                    "samples/android",
+                    validDescriptor(),
+                );
+                recordProducedDescriptor(dir, module);
+                assert.deepStrictEqual(
+                    readLaunchDescriptor(dir, module, undefined, {
+                        requireProduced: true,
+                    }),
+                    validDescriptor(),
+                );
+                fs.writeFileSync(
+                    file,
+                    JSON.stringify({
+                        ...validDescriptor(),
+                        javaLauncher: "/bin/sh",
+                    }),
+                );
+                assert.strictEqual(
+                    readLaunchDescriptor(dir, module, undefined, {
+                        requireProduced: true,
+                    }),
+                    null,
+                );
+            }),
+        );
+
+        it(
+            "restores recorded descriptors from the attached store",
+            withTempWorkspace((dir) => {
+                writeDescriptor(dir, "samples/android", validDescriptor());
+                const state = new Map<string, unknown>();
+                const store = {
+                    get: <T>(key: string) => state.get(key) as T | undefined,
+                    update: async (key: string, value: unknown) => {
+                        state.set(key, value);
+                    },
+                };
+                attachDescriptorProvenanceStore(store);
+                recordProducedDescriptor(dir, module);
+                attachDescriptorProvenanceStore(undefined);
+                attachDescriptorProvenanceStore(store);
+                assert.notStrictEqual(
+                    readLaunchDescriptor(dir, module, undefined, {
+                        requireProduced: true,
+                    }),
+                    null,
+                );
+            }),
+        );
+    });
+
     it(
         "returns null when the descriptor file does not exist",
         withTempWorkspace((dir) => {

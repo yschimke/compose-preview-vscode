@@ -27,6 +27,7 @@ import {
 } from "./kotlinCompileErrorDetector";
 import { LogFilter } from "./logFilter";
 import { ContinuousCompileWorker } from "./daemon/continuousCompileWorker";
+import { recordProducedDescriptor } from "./daemon/descriptorProvenance";
 
 /**
  * Expands a parameterized preview's single template capture into N captures
@@ -1548,6 +1549,9 @@ export class GradleService {
                 }
             }
             await this.runTask(headTask, tailTasks, opts);
+            // Every cold-start bundle runs `composePreviewDaemonStart`, so the descriptor on disk
+            // now is one Gradle wrote for us — the only kind the daemon gate will spawn from.
+            recordProducedDescriptor(this.workspaceRoot, module);
             if (includeApplied) {
                 this.appliedMarkersFreshUntilMs =
                     Date.now() + APPLIED_MARKERS_FRESHNESS_TTL_MS;
