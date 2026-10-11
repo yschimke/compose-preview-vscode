@@ -14,30 +14,37 @@ import {
 } from "./daemonProtocol";
 import { LogFilter } from "../logFilter";
 import { ModuleInfo } from "../gradleService";
+import { descriptorPath, isProducedDescriptor } from "./descriptorProvenance";
 
 /**
  * Reads `<module>/build/compose-previews/daemon-launch.json` and returns the
  * descriptor. Returns null when the file doesn't exist (the consumer hasn't
  * run `composePreviewDaemonStart` yet, or the plugin doesn't apply), or when
  * the schema version doesn't match what this extension knows how to read.
+ *
+ * Pass `requireProduced` on any path that will spawn from the result: the descriptor is then also
+ * null unless this extension saw its own Gradle run write exactly these bytes (see
+ * `descriptorProvenance.ts`), so a descriptor shipped inside a repository is never executed.
  */
 export function readLaunchDescriptor(
     workspaceRoot: string,
     module: ModuleInfo,
     logger?: DaemonClientLogger,
+    opts?: { requireProduced?: boolean },
 ): DaemonLaunchDescriptor | null {
-    const file = path.join(
-        workspaceRoot,
-        module.projectDir,
-        "build",
-        "compose-previews",
-        "daemon-launch.json",
-    );
+    const file = descriptorPath(workspaceRoot, module);
     if (!fs.existsSync(file)) {
         return null;
     }
     try {
         const raw = fs.readFileSync(file, "utf-8");
+        if (opts?.requireProduced && !isProducedDescriptor(file, raw)) {
+            logger?.appendLine(
+                `[daemon] ignoring ${file}: not written by a composePreviewDaemonStart ` +
+                    "run this extension started",
+            );
+            return null;
+        }
         const parsed = JSON.parse(raw) as DaemonLaunchDescriptor;
         if (parsed.schemaVersion !== DAEMON_DESCRIPTOR_SCHEMA_VERSION) {
             logger?.appendLine(

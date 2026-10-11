@@ -219,6 +219,7 @@ export class LiveDaemonGate implements DaemonGate {
             this.workspaceRoot,
             module,
             this.logger,
+            { requireProduced: true },
         );
         if (!descriptor) {
             const message =

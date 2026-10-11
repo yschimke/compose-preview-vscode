@@ -84,6 +84,7 @@ import {
 } from "./daemon/daemonScheduler";
 import { ContinuousCompileManager } from "./daemon/continuousCompileManager";
 import { mergeRemoteComposeChange } from "./daemon/remoteComposeMerge";
+import { attachDescriptorProvenanceStore } from "./daemon/descriptorProvenance";
 import { mergePermissionsChange } from "./daemon/permissionsMerge";
 import { PreviewOverrideStore } from "./daemon/previewOverrideStore";
 import { DaemonRefreshIndicator } from "./daemonRefreshIndicator";
@@ -961,6 +962,7 @@ export async function activate(
     }
 
     extensionContext = context;
+    attachDescriptorProvenanceStore(context.workspaceState);
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
     const rawOutputChannel =
         vscode.window.createOutputChannel("Compose Preview");

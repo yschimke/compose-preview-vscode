@@ -37,6 +37,12 @@
         "workspaceContains:**/build.gradle.kts",
         "workspaceContains:**/build.gradle"
     ],
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": false,
+            "description": "Compose Preview runs the workspace's Gradle build and launches a JVM it configures, so it needs a trusted workspace."
+        }
+    },
     "extensionDependencies": [
         "vscjava.vscode-gradle"
     ],
