@@ -38,6 +38,12 @@ concurrency:
 jobs:
   compare:
     name: Compare preview captures
+    # Skipped on release-please's own release PR. Its `package.json` version bump puts
+    # it in scope below, but it cannot move a capture. The PR author must be the bot,
+    # because branch names are contributor-controlled. Skipped by `if:`, the check still
+    # reports (as skipped), so the never-reports trap above does not apply. See
+    # yschimke/compose-ui-builder#700.
+    if: ${{ !(startsWith(github.head_ref || github.ref_name, 'release-please--') && (github.event.pull_request.user.login || github.actor) == 'github-actions[bot]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

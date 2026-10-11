@@ -22,6 +22,13 @@ concurrency:
 jobs:
   build:
     name: Build and test
+    # Skipped on release-please's own release PR (or the bot's dispatch against that
+    # branch): it changes only the manifest, CHANGELOG.md and the package version, and
+    # main's push run already verified the source. The author/actor must be the bot,
+    # because branch names are contributor-controlled. A job skipped by `if:` reports
+    # "skipped", which satisfies this required check. See
+    # yschimke/compose-ui-builder#700.
+    if: ${{ !(startsWith(github.head_ref || github.ref_name, 'release-please--') && (github.event.pull_request.user.login || github.actor) == 'github-actions[bot]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
