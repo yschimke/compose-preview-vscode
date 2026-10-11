@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.1](https://github.com/yschimke/compose-preview-vscode/compare/v1.50.0...v1.50.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* **daemon:** only spawn from a launch descriptor this extension's Gradle run wrote ([#61](https://github.com/yschimke/compose-preview-vscode/issues/61)) ([af846dd](https://github.com/yschimke/compose-preview-vscode/commit/af846dd378fa111383ecc57db9e0340d13f89963))
+
 ## [1.50.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.49.0...v1.50.0) (2026-10-10)
 
 
