@@ -23,6 +23,7 @@ reason, never as passed.
 You need Node 22+, a VS Code (stable) on `PATH` as `code`, and network access to:
 
 - `github.com`, for the clone and the editor download (~20 MB, once);
+- `ui.coo.ee`, for the catalog capability list on first open (cached after that);
 - the npm registry (`registry.npmjs.org`), for `npm ci`;
 - the VS Code Marketplace, to install the extension's `vscjava.vscode-gradle`
   dependency.
@@ -53,6 +54,10 @@ In that window, turn on early features, which the UI Builder is behind:
 // Settings (JSON), user scope
 "composePreview.earlyFeatures.enabled": true
 ```
+
+For a local catalog server, set `composePreview.uiBuilder.catalogsUrl` to its
+`/api/ui-builder/v1/requests` endpoint. The editor archive supplies the UI;
+the catalog comes from the server that composes the published catalog files.
 
 Keep **View → Output → "Compose Preview"** open throughout. Every UI Builder line
 there starts with `[ui-builder]`, and the first one names the editor version and

@@ -671,6 +671,12 @@
                     "default": "",
                     "scope": "machine-overridable",
                     "markdownDescription": "**Early access.** The Compose UI Builder web editor that `.uid` designs open in: an unpacked archive directory, or the `compose-preview-ui-builder-web-*.zip` that a [compose-ui-builder](https://github.com/yschimke/compose-ui-builder) checkout's `./gradlew :ui-builder-web:webArchive` writes to `ui-builder-web/build/distributions/`. Empty (default) downloads the release the extension pins. Run `Compose UI Builder: Reload UI Builder Editors` after rebuilding."
+                },
+                "composePreview.uiBuilder.catalogsUrl": {
+                    "type": "string",
+                    "default": "https://ui.coo.ee/api/ui-builder/v1/requests",
+                    "scope": "machine-overridable",
+                    "markdownDescription": "**Early access.** UI Builder catalog API used when opening `.uid` designs. Catalogs opened online are cached for offline editing. Point this at a local Compose Preview server when developing a catalog. Run `Compose UI Builder: Reload UI Builder Editors` after changing it."
                 }
             }
         },
