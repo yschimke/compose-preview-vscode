@@ -20,7 +20,12 @@ export interface DesignDocument {
     schema: string;
     id: string;
     title: string;
-    catalogPin: { systemId: string };
+    catalogPin: {
+        systemId: string;
+        catalogRevision?: string;
+        capabilityDigest?: string;
+        nativeRuntimeId?: string;
+    };
     roots: string[];
     nodes: Record<string, DesignNode>;
 }

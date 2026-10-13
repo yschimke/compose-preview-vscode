@@ -123,14 +123,14 @@ export class UiBuilderHost {
     }
 
     /** The capability JSON of [systemId], served from published catalog data. */
-    capabilitiesFor(systemId: string): Promise<string> {
+    capabilitiesFor(pin: DesignDocument["catalogPin"]): Promise<string> {
         this.catalogs ??= new UiBuilderCatalogs(
             path.join(this.globalStorageUri.fsPath, "ui-builder-catalogs"),
             vscode.workspace
                 .getConfiguration("composePreview")
                 .get<string>("uiBuilder.catalogsUrl", DEFAULT_CATALOGS_URL),
         );
-        return this.catalogs.load(systemId);
+        return this.catalogs.load(pin);
     }
 
     async fixture(): Promise<string> {
@@ -170,9 +170,7 @@ export class UiBuilderHost {
         design: DesignDocument,
         text: string,
     ): Promise<void> {
-        const capabilities = await this.capabilitiesFor(
-            design.catalogPin.systemId,
-        );
+        const capabilities = await this.capabilitiesFor(design.catalogPin);
         await webview.postMessage({
             type: "compose-ui-builder/open",
             document: text,
@@ -449,9 +447,9 @@ export class UiBuilderEditorProvider
             await session.panel.webview.postMessage({
                 type: "compose-ui-builder/open",
                 document: "",
-                capabilities: await this.host.capabilitiesFor(
-                    template.systemId,
-                ),
+                capabilities: await this.host.capabilitiesFor({
+                    systemId: template.systemId,
+                }),
                 seed: {
                     designId: designIdFor(
                         path.basename(session.document.uri.fsPath),
