@@ -35,6 +35,7 @@ import {
     type UiBuilderRole,
 } from "./uiBuilderHtml";
 import { UiBuilderDocumentSync } from "./uiBuilderSync";
+import { UiBuilderCatalogs, DEFAULT_CATALOGS_URL } from "./uiBuilderCatalogs";
 import {
     actionContextValues,
     type UiBuilderHostAction,
@@ -57,12 +58,12 @@ type FromEditor =
     | { type: "compose-preview/ui-builder-open-as-text" };
 
 /**
- * What every UI Builder webview shares: the archive, the catalogs in it, and
- * the page built from it. One per extension activation.
+ * What every UI Builder webview shares: the editor archive, published catalogs,
+ * and the page built from the archive. One per extension activation.
  */
 export class UiBuilderHost {
     private dist: Promise<UiBuilderDist> | undefined;
-    private readonly capabilities = new Map<string, Promise<string>>();
+    private catalogs: UiBuilderCatalogs | undefined;
 
     constructor(
         private readonly globalStorageUri: vscode.Uri,
@@ -78,7 +79,7 @@ export class UiBuilderHost {
     /** Forgets the archive, after `webDistPath` changes or a failed resolve. */
     reset(): void {
         this.dist = undefined;
-        this.capabilities.clear();
+        this.catalogs = undefined;
     }
 
     resolveDist(): Promise<UiBuilderDist> {
@@ -121,32 +122,15 @@ export class UiBuilderHost {
         return this.dist;
     }
 
-    /** The capability JSON of [systemId], read from the archive's root. */
-    capabilitiesFor(systemId: string): Promise<string> {
-        let pending = this.capabilities.get(systemId);
-        if (!pending) {
-            pending = this.resolveDist().then(async (dist) => {
-                if (!/^[a-z0-9-]+$/.test(systemId)) {
-                    throw new Error(
-                        `catalog id ${systemId} is not one the editor packages`,
-                    );
-                }
-                const file = path.join(
-                    dist.root,
-                    `${systemId}-capabilities-v1.json`,
-                );
-                try {
-                    return await fs.readFile(file, "utf8");
-                } catch {
-                    throw new Error(
-                        `the UI Builder editor ${dist.manifest.version} does not package the '${systemId}' catalog`,
-                    );
-                }
-            });
-            pending.catch(() => this.capabilities.delete(systemId));
-            this.capabilities.set(systemId, pending);
-        }
-        return pending;
+    /** The capability JSON of [systemId], served from published catalog data. */
+    capabilitiesFor(pin: DesignDocument["catalogPin"]): Promise<string> {
+        this.catalogs ??= new UiBuilderCatalogs(
+            path.join(this.globalStorageUri.fsPath, "ui-builder-catalogs"),
+            vscode.workspace
+                .getConfiguration("composePreview")
+                .get<string>("uiBuilder.catalogsUrl", DEFAULT_CATALOGS_URL),
+        );
+        return this.catalogs.load(pin);
     }
 
     async fixture(): Promise<string> {
@@ -186,9 +170,7 @@ export class UiBuilderHost {
         design: DesignDocument,
         text: string,
     ): Promise<void> {
-        const capabilities = await this.capabilitiesFor(
-            design.catalogPin.systemId,
-        );
+        const capabilities = await this.capabilitiesFor(design.catalogPin);
         await webview.postMessage({
             type: "compose-ui-builder/open",
             document: text,
@@ -465,9 +447,9 @@ export class UiBuilderEditorProvider
             await session.panel.webview.postMessage({
                 type: "compose-ui-builder/open",
                 document: "",
-                capabilities: await this.host.capabilitiesFor(
-                    template.systemId,
-                ),
+                capabilities: await this.host.capabilitiesFor({
+                    systemId: template.systemId,
+                }),
                 seed: {
                     designId: designIdFor(
                         path.basename(session.document.uri.fsPath),
