@@ -218,3 +218,125 @@ export class UiBuilderCatalogs {
         return text;
     }
 }
+
+/** The published-templates route of [systemId], on the same server as [catalogsUrl]. */
+export function templatesUrl(catalogsUrl: string, systemId: string): string {
+    return new URL(
+        `/api/ui-builder/v1/catalogs/${encodeURIComponent(systemId)}/templates`,
+        catalogsUrl,
+    ).toString();
+}
+
+export async function requestTemplates(
+    url: string,
+    transport: typeof fetch = fetch,
+): Promise<string> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    timeout.unref();
+    try {
+        const response = await transport(url, { signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.text();
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+interface TemplateDocuments {
+    schemaVersion: number;
+    catalogPin: CatalogPin;
+    templates: Record<string, unknown>;
+}
+
+function parseTemplates(
+    text: string,
+    pin: Required<CatalogPin>,
+): TemplateDocuments | undefined {
+    try {
+        const parsed = JSON.parse(text) as Partial<TemplateDocuments>;
+        const published = parsed.catalogPin;
+        return parsed.schemaVersion === 1 &&
+            typeof parsed.templates === "object" &&
+            parsed.templates !== null &&
+            published?.systemId === pin.systemId &&
+            published.catalogRevision === pin.catalogRevision &&
+            published.capabilityDigest === pin.capabilityDigest &&
+            published.nativeRuntimeId === pin.nativeRuntimeId
+            ? (parsed as TemplateDocuments)
+            : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * The template documents a catalog publishes (`CatalogTemplateDocumentsV1`), which the editor seeds
+ * a new design from, as the web host's New design form does. Cached per exact catalog pin so a
+ * catalog reopened offline still seeds from the set it was published with.
+ */
+export class UiBuilderTemplates {
+    private readonly sourceCacheRoot: string;
+
+    constructor(
+        cacheRoot: string,
+        private readonly catalogsUrl: string = DEFAULT_CATALOGS_URL,
+        private readonly request: (
+            url: string,
+        ) => Promise<string> = requestTemplates,
+    ) {
+        this.sourceCacheRoot = path.join(
+            cacheRoot,
+            crypto
+                .createHash("sha256")
+                .update(catalogsUrl)
+                .digest("hex")
+                .slice(0, 16),
+        );
+    }
+
+    /**
+     * The published set for the catalog [capabilities] describes, when it is for exactly that
+     * catalog and holds [templateId]; otherwise undefined, and the editor falls back to its
+     * built-in seed. Never throws: a missing set only changes where the seed comes from.
+     */
+    async forTemplate(
+        capabilities: string,
+        templateId: string,
+    ): Promise<string | undefined> {
+        let catalog: CatalogCapability;
+        try {
+            catalog = JSON.parse(capabilities) as CatalogCapability;
+        } catch {
+            return undefined;
+        }
+        const systemId = catalog.benchmark?.catalogSystemId ?? "";
+        if (!isCatalog(catalog, systemId) || !/^[a-z0-9-]+$/.test(systemId)) {
+            return undefined;
+        }
+        const pin = reference(catalog);
+        const file = `${versionFile(this.sourceCacheRoot, pin).slice(0, -".json".length)}.templates.json`;
+        let text = await this.request(templatesUrl(this.catalogsUrl, systemId))
+            .then((fetched) =>
+                parseTemplates(fetched, pin) ? fetched : undefined,
+            )
+            .catch(() => undefined);
+        if (text !== undefined) {
+            try {
+                await fs.mkdir(this.sourceCacheRoot, { recursive: true });
+                const staging = `${file}.${process.pid}.tmp`;
+                await fs.writeFile(staging, text);
+                await fs.rename(staging, file);
+            } catch {
+                // The live set is still usable if global storage cannot be written.
+            }
+        } else {
+            text = await fs.readFile(file, "utf8").catch(() => undefined);
+        }
+        const templates =
+            text === undefined ? undefined : parseTemplates(text, pin);
+        return templates && templateId in templates.templates
+            ? text
+            : undefined;
+    }
+}
