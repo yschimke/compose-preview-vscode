@@ -85,6 +85,7 @@ export class UiBuilderHost {
     reset(): void {
         this.dist = undefined;
         this.catalogs = undefined;
+        this.templates = undefined;
     }
 
     resolveDist(): Promise<UiBuilderDist> {
