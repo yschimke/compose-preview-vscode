@@ -2,7 +2,12 @@ import * as assert from "assert";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { requestCatalogs, UiBuilderCatalogs } from "../uiBuilderCatalogs";
+import {
+    requestCatalogs,
+    templatesUrl,
+    UiBuilderCatalogs,
+    UiBuilderTemplates,
+} from "../uiBuilderCatalogs";
 
 const catalog = (systemId: string, catalogRevision = "revision-1") => ({
     schema: "compose-ui-builder-capabilities/v1-candidate",
@@ -158,5 +163,80 @@ describe("UI Builder published catalogs", () => {
             JSON.parse(await listed.load(wearPin)).benchmark.catalogRevision,
             "revision-1",
         );
+    });
+
+    describe("published templates", () => {
+        const capabilities = JSON.stringify(catalog("wear-m3"));
+        const published = (catalogRevision = "revision-1") =>
+            JSON.stringify({
+                schemaVersion: 1,
+                catalogPin: { ...wearPin, catalogRevision },
+                templates: { "wear-list": { id: "wear-list" } },
+            });
+
+        it("names the catalog's templates route on the catalogs server", () => {
+            assert.strictEqual(
+                templatesUrl(
+                    "https://ui.coo.ee/api/ui-builder/v1/requests",
+                    "wear-m3",
+                ),
+                "https://ui.coo.ee/api/ui-builder/v1/catalogs/wear-m3/templates",
+            );
+        });
+
+        it("sends the published set and reopens it offline", async () => {
+            let asked = "";
+            const online = new UiBuilderTemplates(
+                root,
+                "https://example.test/api/ui-builder/v1/requests",
+                async (url) => {
+                    asked = url;
+                    return published();
+                },
+            );
+            assert.strictEqual(
+                await online.forTemplate(capabilities, "wear-list"),
+                published(),
+            );
+            assert.strictEqual(
+                asked,
+                "https://example.test/api/ui-builder/v1/catalogs/wear-m3/templates",
+            );
+            const offline = new UiBuilderTemplates(
+                root,
+                "https://example.test/api/ui-builder/v1/requests",
+                async () => {
+                    throw new Error("offline");
+                },
+            );
+            assert.strictEqual(
+                await offline.forTemplate(capabilities, "wear-list"),
+                published(),
+            );
+        });
+
+        it("sends nothing for a template the catalog does not publish", async () => {
+            const templates = new UiBuilderTemplates(
+                root,
+                "https://example.test/catalogs",
+                async () => published(),
+            );
+            assert.strictEqual(
+                await templates.forTemplate(capabilities, "jetcaster"),
+                undefined,
+            );
+        });
+
+        it("never sends a set published for another catalog revision", async () => {
+            const templates = new UiBuilderTemplates(
+                root,
+                "https://example.test/catalogs",
+                async () => published("revision-2"),
+            );
+            assert.strictEqual(
+                await templates.forTemplate(capabilities, "wear-list"),
+                undefined,
+            );
+        });
     });
 });

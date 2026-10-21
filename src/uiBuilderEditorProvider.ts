@@ -35,7 +35,11 @@ import {
     type UiBuilderRole,
 } from "./uiBuilderHtml";
 import { UiBuilderDocumentSync } from "./uiBuilderSync";
-import { UiBuilderCatalogs, DEFAULT_CATALOGS_URL } from "./uiBuilderCatalogs";
+import {
+    UiBuilderCatalogs,
+    UiBuilderTemplates,
+    DEFAULT_CATALOGS_URL,
+} from "./uiBuilderCatalogs";
 import {
     actionContextValues,
     type UiBuilderHostAction,
@@ -64,6 +68,7 @@ type FromEditor =
 export class UiBuilderHost {
     private dist: Promise<UiBuilderDist> | undefined;
     private catalogs: UiBuilderCatalogs | undefined;
+    private templates: UiBuilderTemplates | undefined;
 
     constructor(
         private readonly globalStorageUri: vscode.Uri,
@@ -80,6 +85,7 @@ export class UiBuilderHost {
     reset(): void {
         this.dist = undefined;
         this.catalogs = undefined;
+        this.templates = undefined;
     }
 
     resolveDist(): Promise<UiBuilderDist> {
@@ -131,6 +137,20 @@ export class UiBuilderHost {
                 .get<string>("uiBuilder.catalogsUrl", DEFAULT_CATALOGS_URL),
         );
         return this.catalogs.load(pin);
+    }
+
+    /** [templateId]'s published template set for the catalog [capabilities] describes, if any. */
+    templatesFor(
+        capabilities: string,
+        templateId: string,
+    ): Promise<string | undefined> {
+        this.templates ??= new UiBuilderTemplates(
+            path.join(this.globalStorageUri.fsPath, "ui-builder-catalogs"),
+            vscode.workspace
+                .getConfiguration("composePreview")
+                .get<string>("uiBuilder.catalogsUrl", DEFAULT_CATALOGS_URL),
+        );
+        return this.templates.forTemplate(capabilities, templateId);
     }
 
     async fixture(): Promise<string> {
@@ -444,18 +464,26 @@ export class UiBuilderEditorProvider
             return;
         }
         try {
+            const capabilities = await this.host.capabilitiesFor({
+                systemId: template.systemId,
+            });
+            // The catalog's own published template when it has one; the editor keeps its
+            // built-in seed (from the fixture) for the rest, and an older editor ignores it.
+            const templates = await this.host.templatesFor(
+                capabilities,
+                template.templateId,
+            );
             await session.panel.webview.postMessage({
                 type: "compose-ui-builder/open",
                 document: "",
-                capabilities: await this.host.capabilitiesFor({
-                    systemId: template.systemId,
-                }),
+                capabilities,
                 seed: {
                     designId: designIdFor(
                         path.basename(session.document.uri.fsPath),
                     ),
                     templateId: template.templateId,
                     fixture: await this.host.fixture(),
+                    ...(templates === undefined ? {} : { templates }),
                 },
             });
         } catch (error) {
