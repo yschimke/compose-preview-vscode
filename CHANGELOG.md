@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.51.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.50.1...v1.51.0) (2026-10-21)
+
+
+### Features
+
+* **ui-builder:** seed new designs from the catalog's published templates ([#74](https://github.com/yschimke/compose-preview-vscode/issues/74)) ([c7c1f8a](https://github.com/yschimke/compose-preview-vscode/commit/c7c1f8a03bbbf63ba47c431eecb78ddce59f0d2b))
+
+
+### Bug Fixes
+
+* load VS Code UI Builder catalogs from published service ([#68](https://github.com/yschimke/compose-preview-vscode/issues/68)) ([c9fe135](https://github.com/yschimke/compose-preview-vscode/commit/c9fe1353ad25911a772173597789056426ef38bb))
+
 ## [1.50.1](https://github.com/yschimke/compose-preview-vscode/compare/v1.50.0...v1.50.1) (2026-10-11)
 
 
