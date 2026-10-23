@@ -38,7 +38,8 @@ releases*, so:
 - **Bump it in its own PR.** Adopting a new plugin release is a reviewable change, not
   a side effect of a release train. In the monorepo the version came from
   `.release-please-manifest.json` and moved on its own. Renovate now proposes exact published
-  plugin pins in a separate PR; Renovate does not auto-merge those upgrades.
+  plugin pins in a separate PR and auto-merges it once CI is green; a bump CI
+  rejects (see the daemon pin below) waits for a human push.
 - **The committed pin must be a release, never a `-SNAPSHOT`.** The `Plugin Pin`
   workflow rejects a SNAPSHOT and fails if the pinned version does not resolve on
   Maven Central.
@@ -325,7 +326,7 @@ These updates remain held or require review:
 | `playwright` + `@playwright/test` | Playwright bundles its own Chromium, and every baseline on `preview/main` was captured with this one. A bump invalidates the whole set at once and the next PR's visual diff reports fake changes on every fixture. Adopt a new Playwright and republish baselines **in the same change**. Grouped so the two halves cannot desync, and `automerge: false` because a bot cannot do the baseline half. |
 | `@types/vscode` | Has to stay in step with `engines.vscode`. Bumping the types alone compiles against APIs older editors lack; bumping both drops users. A support-policy call. |
 | `engines.vscode` | Renovate is switched **off** for it, not merely gated. It is a semver *range* matched against the running editor, so the preset's `rangeStrategy: pin` produced a bare `1.135.0` in [#11](https://github.com/yschimke/compose-preview-vscode/pull/11) — which VS Code reads as *only* 1.135.0, and every later editor then refuses to load the extension ("Extension is not compatible with Code 1.138.0"). It broke both Electron suites the day stable moved past the pin, on `main` as much as on any branch. Keep the caret; `src/test/extensionManifest.test.ts` fails if it is ever pinned again. |
-| `plugin-version.json` | Renovate tracks the pin through a custom manager and opens a separate PR with automerge disabled. It looks the version up as `compose-ai-tools-bom`, not the plugin marker: Renovate never queries Maven Central for a `.gradle.plugin` name, so the marker always came back empty. The derived `composePreviewDaemon` pin and protocol fixtures must still be synchronized against that release BOM; CI verifies both. |
+| `plugin-version.json` | Renovate tracks the pin through a custom manager and opens a separate PR that auto-merges once CI is green. It looks the version up as `compose-ai-tools-bom`, not the plugin marker: Renovate never queries Maven Central for a `.gradle.plugin` name, so the marker always came back empty. The derived `composePreviewDaemon` pin and protocol fixtures must still be synchronized against that release BOM; CI verifies both, so a bump that moves the daemon stays red, and unmerged, until someone pushes `scripts/check-daemon-pin.mjs`'s value and `scripts/sync-protocol-fixtures.sh`'s output onto it. |
 
 The first two are dashboard-gated rather than disabled, so the upgrade stays
 *visible* and is taken deliberately.
