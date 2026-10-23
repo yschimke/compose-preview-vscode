@@ -27,5 +27,5 @@
         "`composeAiPlugin`."
     ],
     "composeAiPlugin": "2.72.0",
-    "composePreviewDaemon": "3.13.2"
+    "composePreviewDaemon": "3.24.0"
 }
