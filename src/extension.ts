@@ -3552,6 +3552,7 @@ async function warmDaemonForModuleImpl(
         } else {
             lastWarmDaemonError = null;
             continuousCompileManager?.ensureWorker(module);
+            warmInProcessCompiler(module, filePath);
         }
         if (filePath) {
             finishDaemonStartupProgress(module, filePath, warmed);
@@ -4564,6 +4565,33 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
         return false;
     }
     return true;
+}
+
+/**
+ * Starts the daemon's warm-compiler warm-up in the background, so the first in-process
+ * compile of a save is a ~100 ms warm one rather than a multi-second cold one. Warming
+ * with the file being viewed also loads the library symbols its next edit will use. A
+ * save that arrives meanwhile waits in the daemon for the current warm-up pass, never
+ * for the whole warm-up.
+ */
+function warmInProcessCompiler(module: ModuleInfo, filePath?: string): void {
+    if (!inProcessCompileEnabled() || !daemonScheduler) {
+        return;
+    }
+    const sources = filePath?.endsWith(".kt") ? [filePath] : [];
+    const t0 = Date.now();
+    void daemonScheduler
+        .compileWarmUpInProcess(module, sources)
+        .then((result) => {
+            if (!result) {
+                return;
+            }
+            logLine(
+                result.ready
+                    ? `[compile-in-process] ${module.modulePath} warm compiler ready in ${Date.now() - t0} ms`
+                    : `[compile-in-process] ${module.modulePath} no warm compiler: ${result.message ?? "unavailable"}`,
+            );
+        });
 }
 
 function inProcessCompileEnabled(): boolean {
