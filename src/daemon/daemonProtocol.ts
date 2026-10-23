@@ -433,6 +433,24 @@ export interface SourceChangeSet {
 
 export type CompileResultKind = "ok" | "compileError" | "fallback";
 
+/**
+ * Client → daemon request: warm the daemon's in-process compiler before the first
+ * `compileSources`, so that edit does not pay for loading the compiler, building its
+ * class-path state and a cold JIT (compose-preview-daemon `docs/daemon/WARM-COMPILE.md`).
+ * The daemon compiles [sources] into a scratch directory and installs nothing; with none
+ * named it warms with a generated file. A `compileSources` sent meanwhile waits for it.
+ */
+export interface CompileWarmUpParams {
+    sources?: string[];
+}
+
+export interface CompileWarmUpResult {
+    /** False when the module has no warm compiler (the Build Tools API serves it alone). */
+    ready: boolean;
+    durationMs?: number;
+    message?: string | null;
+}
+
 export interface CompileSourcesResult {
     result: CompileResultKind;
     /** Populated when `result === "compileError"`. Empty otherwise. */

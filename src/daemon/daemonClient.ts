@@ -3,6 +3,8 @@ import { FrameDecoder, encodeFrame } from "./daemonFraming";
 import {
     ClasspathDirtyParams,
     CompileSourcesParams,
+    CompileWarmUpParams,
+    CompileWarmUpResult,
     CompileSourcesResult,
     DaemonWarmingParams,
     DataFetchParams,
@@ -214,6 +216,11 @@ export class DaemonClient {
         params: CompileSourcesParams,
     ): Promise<CompileSourcesResult> {
         return this.request<CompileSourcesResult>("compileSources", params);
+    }
+
+    /** Warms the in-process compiler; answers once the warm-up has finished. */
+    compileWarmUp(params: CompileWarmUpParams): Promise<CompileWarmUpResult> {
+        return this.request<CompileWarmUpResult>("compileWarmUp", params);
     }
 
     renderNow(params: RenderNowParams): Promise<RenderNowResult> {

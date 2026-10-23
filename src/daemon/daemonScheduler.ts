@@ -167,7 +167,17 @@ export interface DaemonScheduler {
     compileSourcesInProcess(
         module: ModuleInfo,
         sources: string[],
+        changes?: import("./daemonProtocol").SourceChangeSet,
     ): Promise<import("./daemonProtocol").CompileSourcesResult | null>;
+    /**
+     * Stage-2: send a `compileWarmUp` JSON-RPC request so the first `compileSources`
+     * finds the daemon's warm compiler loaded and JIT-warm. Null when the daemon isn't
+     * reachable or the request failed.
+     */
+    compileWarmUpInProcess(
+        module: ModuleInfo,
+        sources: string[],
+    ): Promise<import("./daemonProtocol").CompileWarmUpResult | null>;
     setFocus(module: ModuleInfo, previewIds: string[]): Promise<void>;
     setVisible(
         module: ModuleInfo,
@@ -449,6 +459,7 @@ export class LiveDaemonScheduler implements DaemonScheduler {
     async compileSourcesInProcess(
         module: ModuleInfo,
         sources: string[],
+        changes?: import("./daemonProtocol").SourceChangeSet,
     ): Promise<import("./daemonProtocol").CompileSourcesResult | null> {
         const client = await this.gate.getOrSpawn(
             module,
@@ -458,10 +469,35 @@ export class LiveDaemonScheduler implements DaemonScheduler {
             return null;
         }
         try {
-            return await client.compileSources({ sources });
+            // The change set is what lets the daemon's warm compiler take the edit: without
+            // one it cannot prove the edit local and every compile goes to the Build Tools
+            // API's incremental compile (compose-preview-daemon WARM-COMPILE.md). It must be
+            // the whole dirty set since the last successful compile, never a guess.
+            return await client.compileSources({ sources, changes });
         } catch (err) {
             this.logger.appendLine(
                 `[daemon] compileSources failed for ${module.modulePath}: ${(err as Error).message}`,
+            );
+            return null;
+        }
+    }
+
+    async compileWarmUpInProcess(
+        module: ModuleInfo,
+        sources: string[],
+    ): Promise<import("./daemonProtocol").CompileWarmUpResult | null> {
+        const client = await this.gate.getOrSpawn(
+            module,
+            this.daemonEvents(module.modulePath),
+        );
+        if (!client) {
+            return null;
+        }
+        try {
+            return await client.compileWarmUp({ sources });
+        } catch (err) {
+            this.logger.appendLine(
+                `[daemon] compileWarmUp failed for ${module.modulePath}: ${(err as Error).message}`,
             );
             return null;
         }
@@ -1044,8 +1080,17 @@ export class GradleOnlyDaemonScheduler implements DaemonScheduler {
     async compileSourcesInProcess(
         _module: ModuleInfo,
         _sources: string[],
+        _changes?: import("./daemonProtocol").SourceChangeSet,
     ): Promise<import("./daemonProtocol").CompileSourcesResult | null> {
         /* no-op: minimal mode never reaches the daemon, callers fall back to Gradle */
+        return null;
+    }
+
+    async compileWarmUpInProcess(
+        _module: ModuleInfo,
+        _sources: string[],
+    ): Promise<import("./daemonProtocol").CompileWarmUpResult | null> {
+        /* no-op: minimal mode never compiles in process */
         return null;
     }
 
