@@ -3176,21 +3176,29 @@ async function notifyDaemonOfSave(filePath: string): Promise<DaemonSaveResult> {
             ? editorScope.file
             : undefined;
     let filePreviews = previewsForFile(manifest, module, filePath);
-    const sourceDiffers = await previewSourceMayDifferFromCache(
-        filePath,
-        filePreviews,
-    );
-    if (manifest.length === 0 || sourceDiffers) {
-        if (sourceDiffers) {
-            logLine(
-                `daemon: preview declarations changed in ${path.basename(filePath)}; reconciling before startup`,
-            );
+    // An empty module cache says nothing about this file's declarations: it is
+    // the first save, or a reconcile is in flight (reconcilePreviewManifest
+    // clears the cache before discovering). Compare the source against a
+    // plain discover first — it joins any in-flight one — and only defeat
+    // task history and the build cache if the source still disagrees with it.
+    let discoverFailed = false;
+    if (manifest.length === 0) {
+        const fresh = await reconcilePreviewManifest(module, repaintFile);
+        if (fresh) {
+            manifest = fresh;
+            filePreviews = previewsForFile(fresh, module, filePath);
+        } else {
+            discoverFailed = true;
         }
-        const fresh = await reconcilePreviewManifest(
-            module,
-            repaintFile,
-            sourceDiffers,
+    }
+    if (
+        !discoverFailed &&
+        (await previewSourceMayDifferFromCache(filePath, filePreviews))
+    ) {
+        logLine(
+            `daemon: preview declarations changed in ${path.basename(filePath)}; reconciling before startup`,
         );
+        const fresh = await reconcilePreviewManifest(module, repaintFile, true);
         if (fresh) {
             manifest = fresh;
             filePreviews = previewsForFile(fresh, module, filePath);
