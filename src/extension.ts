@@ -82,6 +82,7 @@ import {
     LiveDaemonScheduler,
     WarmState,
 } from "./daemon/daemonScheduler";
+import { PendingSourceChanges } from "./daemon/pendingSourceChanges";
 import { ContinuousCompileManager } from "./daemon/continuousCompileManager";
 import { mergeRemoteComposeChange } from "./daemon/remoteComposeMerge";
 import { attachDescriptorProvenanceStore } from "./daemon/descriptorProvenance";
@@ -332,6 +333,12 @@ const lastEditedPreviewFunctionByFile = new Map<string, string>();
  *  `firstSaveSeen` / `pendingSavePath` / `debounceElapsed` / `refreshInFlight`
  *  quintet. See [RefreshQueue]. Constructed in activate() so it captures the
  *  live `runRefreshExclusiveImpl` / `invalidateModuleCache` references. */
+/**
+ * Kotlin sources changed per module since the last successful compile — the change set
+ * `compileSources` declares to the daemon's warm compiler.
+ */
+const pendingSourceChanges = new PendingSourceChanges();
+
 let refreshQueue: RefreshQueue = new RefreshQueue(
     defaultRefreshQueueEffects(
         (target) => runRefreshExclusiveImpl(target),
@@ -2494,6 +2501,10 @@ export async function activate(
             const journeyModule = gradleService?.resolveModule(doc.uri.fsPath);
             if (journeyModule) {
                 startEditJourney(journeyModule.modulePath);
+                pendingSourceChanges.recordModified(
+                    journeyModule.modulePath,
+                    doc.uri.fsPath,
+                );
             }
             // The daemon-vs-Gradle decision is made inside runRefreshExclusive
             // — either path runs, never both. See `pickRefreshMode` for the
@@ -2518,12 +2529,26 @@ export async function activate(
     // the panel look "jumpy" with spinners reappearing over cards after each
     // build completed. In minimal mode every render is manual, so the watcher
     // never enqueues a refresh.
-    const onWatcherEvent = (uri: vscode.Uri) => {
+    const onWatcherEvent = (uri: vscode.Uri, removed = false) => {
         if (inMinimalMode()) {
             return;
         }
         if (!isSourceFile(uri.fsPath)) {
             return;
+        }
+        const changedModule = gradleService?.resolveModule(uri.fsPath);
+        if (changedModule) {
+            if (removed) {
+                pendingSourceChanges.recordRemoved(
+                    changedModule.modulePath,
+                    uri.fsPath,
+                );
+            } else {
+                pendingSourceChanges.recordModified(
+                    changedModule.modulePath,
+                    uri.fsPath,
+                );
+            }
         }
         const target = resolveWatcherTarget(uri.fsPath);
         refreshQueue.dispatchSave(target, {
@@ -2533,9 +2558,9 @@ export async function activate(
     };
     for (const glob of ["**/*.kt", "**/res/**/*.xml"]) {
         const watcher = vscode.workspace.createFileSystemWatcher(glob);
-        watcher.onDidChange(onWatcherEvent);
-        watcher.onDidCreate(onWatcherEvent);
-        watcher.onDidDelete(onWatcherEvent);
+        watcher.onDidChange((uri) => onWatcherEvent(uri));
+        watcher.onDidCreate((uri) => onWatcherEvent(uri));
+        watcher.onDidDelete((uri) => onWatcherEvent(uri, true));
         context.subscriptions.push(watcher);
     }
 
@@ -2625,6 +2650,10 @@ export async function activate(
                 const journeyModule = gradleService?.resolveModule(filePath);
                 if (journeyModule) {
                     startEditJourney(journeyModule.modulePath);
+                    pendingSourceChanges.recordModified(
+                        journeyModule.modulePath,
+                        filePath,
+                    );
                 }
                 refreshQueue.dispatchSave(filePath, {
                     allowImmediate: true,
@@ -3094,6 +3123,12 @@ async function applyDiscoveryDiff(
     if (removedIds.length === 0 && added.length === 0 && changedCount === 0) {
         return;
     }
+    // An `added` forces a Gradle rediscover that defeats task history and the build
+    // cache, so say which previews drove it.
+    logLine(
+        `[daemon] discoveryUpdated ${moduleId}: added=[${added.map((p) => p.id).join(", ")}] ` +
+            `removed=[${removedIds.join(", ")}] changed=${changedCount}`,
+    );
 
     const module = gradleService.findModuleByPath(moduleId);
     if (!module) {
@@ -4523,11 +4558,17 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
     // path below — `gradleService.compileOnly` is the universal floor.
     if (inProcessCompileEnabled() && daemonScheduler) {
         const t0 = Date.now();
-        const outcome = await daemonScheduler.compileSourcesInProcess(module, [
-            filePath,
-        ]);
+        const pending = pendingSourceChanges.snapshot(module.modulePath);
+        const outcome = await daemonScheduler.compileSourcesInProcess(
+            module,
+            [filePath],
+            pending?.changes,
+        );
         const elapsed = Date.now() - t0;
         if (outcome?.result === "ok") {
+            if (pending) {
+                pendingSourceChanges.clear(module.modulePath, pending);
+            }
             logLine(
                 `[compile-in-process] ${module.modulePath} ok in ${elapsed} ms (daemon reported ${outcome.durationMs} ms)`,
             );
@@ -4552,8 +4593,12 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
         // outcome === null or fallback: fall through to the existing path.
     }
 
+    const beforeGradle = pendingSourceChanges.snapshot(module.modulePath);
     try {
         await gradleService.compileOnly(module);
+        if (beforeGradle) {
+            pendingSourceChanges.clear(module.modulePath, beforeGradle);
+        }
     } catch (err) {
         if (err instanceof TaskCancelledError) {
             logLine(`daemon: compileOnly cancelled for ${module.modulePath}`);
