@@ -1,0 +1,6 @@
+{
+  "phase": "failed",
+  "totalSlots": 1,
+  "elapsedMs": 600412,
+  "message": "IllegalStateException: sandbox 0 did not boot within 600000ms"
+}

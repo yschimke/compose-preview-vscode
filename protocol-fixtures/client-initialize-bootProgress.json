@@ -1,0 +1,12 @@
+{
+  "protocolVersion": 2,
+  "clientVersion": "compose-preview-cli/2.70.0",
+  "workspaceRoot": "/home/dev/projects/my-app",
+  "moduleId": "//app:previews",
+  "moduleProjectDir": "/home/dev/projects/my-app/app",
+  "capabilities": {
+    "visibility": false,
+    "metrics": false,
+    "bootProgress": true
+  }
+}
