@@ -54,9 +54,9 @@
       "groupName": "three"
     },
     {
-      "description": "Track published plugin markers for the extension compatibility pin; derive runtime versions from that release BOM. Keep upgrades reviewed rather than automerged.",
+      "description": "Track the extension compatibility pin and automerge its upgrades once CI is green. A bump that moves the daemon BOM also needs `composePreviewDaemon` and the vendored protocol fixtures resynchronised, which Renovate cannot derive: the `Plugin Pin` and `Protocol Fixtures` checks stay red on such a PR, so it waits for a human push instead of landing. The pin names the plugin, but it is looked up as `compose-ai-tools-bom`, which every plugin release publishes to Maven Central at the same version: Renovate's maven datasource skips Maven Central for any package ending in `.gradle.plugin` (\"skipping Maven Central for suspected Gradle plugin\"), so looking up the marker always returned no-result and the pin sat at 2.35.0 without a PR.",
       "matchPackageNames": [
-        "ee.schimke.composeai.preview:ee.schimke.composeai.preview.gradle.plugin"
+        "ee.schimke.composeai:compose-ai-tools-bom"
       ],
       "groupName": "compose-ai-tools",
       "rangeStrategy": "pin",
@@ -65,7 +65,7 @@
         "at any time"
       ],
       "minimumReleaseAge": null,
-      "automerge": false
+      "automerge": true
     }
   ],
   "customManagers": [
@@ -78,7 +78,8 @@
         "\"composeAiPlugin\":\\s*\"(?<currentValue>[^\"\\n]+)\""
       ],
       "datasourceTemplate": "maven",
-      "depNameTemplate": "ee.schimke.composeai.preview:ee.schimke.composeai.preview.gradle.plugin"
+      "depNameTemplate": "ee.schimke.composeai.preview:ee.schimke.composeai.preview.gradle.plugin",
+      "packageNameTemplate": "ee.schimke.composeai:compose-ai-tools-bom"
     }
   ]
 }
