@@ -3143,13 +3143,23 @@ async function applyDiscoveryDiff(
         gradleService.resolveModule(editorScope.file)?.modulePath === moduleId
             ? editorScope.file
             : undefined;
+    // With in-process compile the daemon compiled the edit itself, and a Gradle discover would
+    // run `compileKotlin` against class files Gradle did not write: it recompiles the module,
+    // clearing the output directory while the daemon scans it, which the daemon then reports as
+    // previews removed and re-added. So a `changed`-only diff (a body edit; the daemon has
+    // already re-rendered from its own index) runs no Gradle at all, and an add/remove gets a
+    // plain discover rather than one that defeats task history and the build cache.
+    const inProcess = inProcessCompileEnabled();
+    if (inProcess && added.length === 0 && removedIds.length === 0) {
+        return;
+    }
     // `added` came from the daemon's scan of freshly-compiled bytecode. Force Gradle discovery in
     // that case: an overlapping render can have scanned Kotlin's output directory while it was
     // temporarily empty and left an asset-only manifest that Gradle otherwise calls up-to-date.
     const fresh = await reconcilePreviewManifest(
         module,
         repaintFile,
-        added.length > 0,
+        added.length > 0 && !inProcess,
     );
 
     // reconcilePreviewManifest only reshapes the panel (setPreviews) — it does
