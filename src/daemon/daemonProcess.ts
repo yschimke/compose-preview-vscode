@@ -170,6 +170,28 @@ export interface SpawnOptions {
  *   - the JVM exits before `initialize` completes,
  *   - `initialize` returns an error.
  */
+/** The daemon's post-capture allowlist property (`docs/daemon/TUNABLES.md` upstream). */
+export const POST_CAPTURE_KINDS_PROPERTY = "composeai.daemon.postCaptureKinds";
+
+/**
+ * System properties the editor sets unless the build already did.
+ *
+ * By default the daemon runs every post-capture processor (semantics,
+ * semantics wireframe, layout inspector, translations) on every render, about
+ * 100 ms of CPU each that the panel only uses when a card's overlay or
+ * inspector is open. Those subscribe to their kinds, and `data/fetch`
+ * re-renders for one that is missing, so an allowlist naming no real kind
+ * makes every processor on demand without losing any of them.
+ */
+export function withEditorDefaults(
+    systemProperties: Readonly<Record<string, string>>,
+): Record<string, string> {
+    return {
+        [POST_CAPTURE_KINDS_PROPERTY]: "none",
+        ...systemProperties,
+    };
+}
+
 export async function spawnDaemon(opts: SpawnOptions): Promise<SpawnedDaemon> {
     const { descriptor, clientVersion, events, workspaceRoot } = opts;
     const logger = opts.logger;
@@ -188,9 +210,9 @@ export async function spawnDaemon(opts: SpawnOptions): Promise<SpawnedDaemon> {
         );
     }
 
-    const sysProps = Object.entries(descriptor.systemProperties).map(
-        ([k, v]) => `-D${k}=${v}`,
-    );
+    const sysProps = Object.entries(
+        withEditorDefaults(descriptor.systemProperties),
+    ).map(([k, v]) => `-D${k}=${v}`);
     // The daemon classpath is owned by `descriptor.classpath` and applied via
     // the `@argfile` below; `jvmArgs` is only meant to carry tuning flags
     // (`--add-opens`, `-Xmx`, …). A classpath option or an argfile-disabling

@@ -10,6 +10,8 @@ import {
     readLaunchDescriptor,
     sanitizeJvmArgs,
     spawnDaemon,
+    POST_CAPTURE_KINDS_PROPERTY,
+    withEditorDefaults,
 } from "../daemon/daemonProcess";
 import {
     DAEMON_DESCRIPTOR_SCHEMA_VERSION,
@@ -572,5 +574,23 @@ describe("sanitizeJvmArgs", () => {
         // `-Dfoo=-classpath` is a system property, not the launcher option.
         const args = ["-Dfoo=-classpath"];
         assert.deepStrictEqual(sanitizeJvmArgs(args), args);
+    });
+});
+
+describe("withEditorDefaults", () => {
+    it("makes every post-capture processor on demand", () => {
+        assert.deepStrictEqual(withEditorDefaults({ a: "1" }), {
+            [POST_CAPTURE_KINDS_PROPERTY]: "none",
+            a: "1",
+        });
+    });
+
+    it("keeps an allowlist the build set", () => {
+        assert.strictEqual(
+            withEditorDefaults({
+                [POST_CAPTURE_KINDS_PROPERTY]: "compose/semantics",
+            })[POST_CAPTURE_KINDS_PROPERTY],
+            "compose/semantics",
+        );
     });
 });

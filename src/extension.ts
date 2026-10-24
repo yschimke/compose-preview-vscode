@@ -4441,7 +4441,14 @@ function writeCalibration(module: ModuleInfo, latest: PhaseDurations): void {
  *  else falls back to the longer `DEBOUNCE_MS` that absorbs burst saves
  *  across multiple files. */
 function refreshDebounceMsFor(target: string): number {
-    return target === editorScope.file ? SCOPE_DEBOUNCE_MS : DEBOUNCE_MS;
+    if (target !== editorScope.file) {
+        return DEBOUNCE_MS;
+    }
+    // Compiled in the daemon, a save costs a few hundred milliseconds and
+    // the daemon collapses a burst of renders for the same preview itself,
+    // so waiting only delays the pixels. The queue still holds a save that
+    // lands while one is in flight.
+    return inProcessCompileEnabled() ? 0 : SCOPE_DEBOUNCE_MS;
 }
 
 /** Resolve a watcher event's file path to the refresh target. Watcher events
