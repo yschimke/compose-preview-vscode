@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.2](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.1...v1.51.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* adopt compose-ai-tools 2.74.0 ([#91](https://github.com/yschimke/compose-preview-vscode/issues/91)) ([11e58ab](https://github.com/yschimke/compose-preview-vscode/commit/11e58ab3babe49618ac46e53c50e1c524cf36134))
+
 ## [1.51.1](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.0...v1.51.1) (2026-10-24)
 
 
