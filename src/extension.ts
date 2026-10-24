@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { focusedPreviewIds, isPreviewOfFunction } from "./renderFocus";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -3311,6 +3312,7 @@ async function notifyDaemonOfSave(filePath: string): Promise<DaemonSaveResult> {
             ids,
             "save",
             "save-heavy-opt-in",
+            saveFocusIds(filePath, ids),
         );
         return ok ? "accepted" : "failed";
     } catch (err) {
@@ -3320,21 +3322,24 @@ async function notifyDaemonOfSave(filePath: string): Promise<DaemonSaveResult> {
 }
 
 /**
- * Focus `ids` and dispatch a daemon render, split across the fast/full tiers by
- * heavy-capture opt-in. Returns false if a renderNow was rejected, true
- * otherwise (including an empty id set, which is a no-op). Shared by the save
- * path and the discoveryUpdated handler so both render through the same tiering.
+ * Focus `focusIds` and dispatch a daemon render of `ids`, split across the
+ * fast/full tiers by heavy-capture opt-in. Returns false if a renderNow was
+ * rejected, true otherwise (including an empty id set, which is a no-op).
+ * Shared by the save path and the discoveryUpdated handler so both render
+ * through the same tiering. The daemon starts focused renders first and holds
+ * the rest until they finish, then takes visible ones before the others.
  */
 async function dispatchDaemonRender(
     module: ModuleInfo,
     ids: string[],
     fastReason: string,
     fullReason: string,
+    focusIds: string[] = ids,
 ): Promise<boolean> {
     if (!daemonScheduler || ids.length === 0) {
         return true;
     }
-    await daemonScheduler.setFocus(module, ids);
+    await daemonScheduler.setFocus(module, focusIds);
     const fullIds = heavyOptInsFor(module.modulePath, ids);
     const fastIds =
         fullIds.length === 0 ? ids : ids.filter((id) => !fullIds.includes(id));
@@ -3374,13 +3379,28 @@ function prioritizeEditedPreview(filePath: string, ids: string[]): string[] {
     if (!editedFunction || ids.length <= 1) {
         return ids;
     }
-    const prioritized = ids.find(
-        (id) => previewFunctionNameFromId(id) === editedFunction,
+    const prioritized = ids.find((id) =>
+        isPreviewOfFunction(id, editedFunction),
     );
     if (!prioritized) {
         return ids;
     }
     return [prioritized, ...ids.filter((id) => id !== prioritized)];
+}
+
+/**
+ * What a save focuses: the previews of the function being edited and the card
+ * the panel is scoped to, of the saved file's [ids]. Empty when the edit is in
+ * a helper (a theme, a shared component) and the panel shows the whole file:
+ * the daemon then renders the on-screen cards first. Focusing every preview
+ * in the file, as saves did, gave the daemon nothing to order by.
+ */
+function saveFocusIds(filePath: string, ids: string[]): string[] {
+    return focusedPreviewIds(
+        ids,
+        lastEditedPreviewFunctionByFile.get(filePath),
+        historyScopeRef.current?.previewId,
+    );
 }
 
 function functionNameAtLine(source: string, line: number): string | null {
@@ -3393,15 +3413,6 @@ function functionNameAtLine(source: string, line: number): string | null {
         }
     }
     return null;
-}
-
-function previewFunctionNameFromId(previewId: string): string {
-    const hash = previewId.lastIndexOf("#");
-    if (hash >= 0 && hash + 1 < previewId.length) {
-        return previewId.substring(hash + 1);
-    }
-    const dot = previewId.lastIndexOf(".");
-    return dot >= 0 ? previewId.substring(dot + 1) : previewId;
 }
 
 /**
