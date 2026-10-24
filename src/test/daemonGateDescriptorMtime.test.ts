@@ -2,7 +2,11 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { descriptorMtimeMs } from "../daemon/daemonGate";
+import {
+    descriptorMtimeMs,
+    needsRespawn,
+    readDescriptorSnapshot,
+} from "../daemon/daemonGate";
 
 /**
  * Pinned-down behaviour of the mtime-watch helper that drives `LiveDaemonGate.getOrSpawn`'s
@@ -81,5 +85,69 @@ describe("descriptorMtimeMs (LiveDaemonGate respawn signal)", () => {
             after > before,
             `expected post-rewrite mtime (${after}) > pre-rewrite mtime (${before})`,
         );
+    });
+});
+
+describe("needsRespawn (LiveDaemonGate descriptor rewrite)", () => {
+    let tmpDir: string;
+    const module = { projectDir: "app", modulePath: ":app" };
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "daemon-gate-respawn-"));
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    const manifest = () => path.join(tmpDir, "previews.json");
+
+    function write(classpath: string[], mtimeMs: number): void {
+        const dir = path.join(tmpDir, "app", "build", "compose-previews");
+        fs.mkdirSync(dir, { recursive: true });
+        const file = path.join(dir, "daemon-launch.json");
+        fs.writeFileSync(
+            file,
+            JSON.stringify({ classpath, manifestPath: manifest() }),
+        );
+        fs.utimesSync(file, new Date(), new Date(mtimeMs));
+    }
+
+    function snapshot() {
+        const s = readDescriptorSnapshot(tmpDir, module);
+        assert.ok(s);
+        return s;
+    }
+
+    it("keeps the daemon when a discovery rewrites the descriptor unchanged", () => {
+        fs.writeFileSync(manifest(), "{}");
+        write(["a.jar"], 1_000_000);
+        const atSpawn = snapshot();
+        write(["a.jar"], 2_000_000);
+        assert.strictEqual(needsRespawn(atSpawn, snapshot()), false);
+    });
+
+    it("respawns when the launch shape changes", () => {
+        fs.writeFileSync(manifest(), "{}");
+        write(["a.jar"], 1_000_000);
+        const atSpawn = snapshot();
+        write(["a.jar", "b.jar"], 2_000_000);
+        assert.strictEqual(needsRespawn(atSpawn, snapshot()), true);
+    });
+
+    it("respawns a daemon spawned before previews.json existed", () => {
+        write(["a.jar"], 1_000_000);
+        const atSpawn = snapshot();
+        assert.strictEqual(atSpawn.manifestPresent, false);
+        fs.writeFileSync(manifest(), "{}");
+        write(["a.jar"], 2_000_000);
+        assert.strictEqual(needsRespawn(atSpawn, snapshot()), true);
+    });
+
+    it("ignores a descriptor that has not been rewritten", () => {
+        write(["a.jar"], 1_000_000);
+        const atSpawn = snapshot();
+        fs.writeFileSync(manifest(), "{}");
+        assert.strictEqual(needsRespawn(atSpawn, snapshot()), false);
     });
 });
