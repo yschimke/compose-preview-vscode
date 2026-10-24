@@ -4578,9 +4578,13 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
             modified: [filePath],
             removed: [],
         };
+        // Produced only: the descriptor's paths drive a recursive delete below, and one that
+        // merely sits in the workspace is untrusted (descriptorProvenance.ts).
         const descriptor = readLaunchDescriptor(
             gradleService.workspaceRoot,
             module,
+            undefined,
+            { requireProduced: true },
         );
         const sourceDirs = descriptor?.sourceWatch?.sourceDirs;
         const icWorkingDir = descriptor?.btaCompile?.icWorkingDir;
@@ -4590,7 +4594,14 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
         const rebuild =
             !!sourceDirs &&
             !!icWorkingDir &&
-            resetIncrementalCacheOnce(icWorkingDir);
+            resetIncrementalCacheOnce(
+                icWorkingDir,
+                path.join(
+                    gradleService.workspaceRoot,
+                    module.projectDir,
+                    "build",
+                ),
+            );
         if (rebuild) {
             logLine(
                 `[compile-in-process] ${module.modulePath} rebuilding the incremental cache from the whole module`,
