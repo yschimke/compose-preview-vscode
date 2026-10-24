@@ -5874,6 +5874,24 @@ function handleWebviewMessage(msg: WebviewToExtension) {
                 );
                 void ensureAppliedMarkersBootstrapped().then((bootstrapped) => {
                     if (!bootstrapped) {
+                        // The refresh below bailed with "no-module" while the
+                        // bootstrap ran and painted "Configuring Gradle…";
+                        // nothing else repaints that empty state, so replace
+                        // it with the failure-and-retry message.
+                        const scopeFile = editorScope.file;
+                        if (
+                            !hasPreviewsLoaded &&
+                            scopeFile === preBootstrapScope &&
+                            !(
+                                scopeFile &&
+                                gradleService?.resolveModule(scopeFile)
+                            )
+                        ) {
+                            panel?.postMessage({
+                                command: "showMessage",
+                                text: emptyStateMessage(scopeFile ?? undefined),
+                            });
+                        }
                         return;
                     }
                     sendModuleList();
