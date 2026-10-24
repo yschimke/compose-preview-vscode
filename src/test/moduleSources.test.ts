@@ -82,20 +82,27 @@ describe("compileSourcesFor", () => {
 });
 
 describe("resetIncrementalCacheOnce", () => {
+    let buildDir: string;
     let workDir: string;
 
     beforeEach(() => {
-        workDir = fs.mkdtempSync(path.join(os.tmpdir(), "bta-ic-"));
+        buildDir = fs.mkdtempSync(path.join(os.tmpdir(), "module-build-"));
+        workDir = path.join(
+            buildDir,
+            "compose-previews",
+            "daemon-state",
+            "bta-ic",
+        );
         fs.mkdirSync(path.join(workDir, "ic", "caches"), { recursive: true });
         fs.mkdirSync(path.join(workDir, "cp-snapshots"));
     });
 
     afterEach(() => {
-        fs.rmSync(workDir, { recursive: true, force: true });
+        fs.rmSync(buildDir, { recursive: true, force: true });
     });
 
     it("drops the incremental cache once and keeps the class-path snapshots", () => {
-        assert.strictEqual(resetIncrementalCacheOnce(workDir), true);
+        assert.strictEqual(resetIncrementalCacheOnce(workDir, buildDir), true);
         assert.strictEqual(fs.existsSync(path.join(workDir, "ic")), false);
         assert.strictEqual(
             fs.existsSync(path.join(workDir, "cp-snapshots")),
@@ -107,7 +114,29 @@ describe("resetIncrementalCacheOnce", () => {
         );
 
         fs.mkdirSync(path.join(workDir, "ic"));
-        assert.strictEqual(resetIncrementalCacheOnce(workDir), false);
+        assert.strictEqual(resetIncrementalCacheOnce(workDir, buildDir), false);
         assert.strictEqual(fs.existsSync(path.join(workDir, "ic")), true);
+    });
+
+    it("refuses a working dir outside the module's build dir", () => {
+        const outside = fs.mkdtempSync(path.join(os.tmpdir(), "elsewhere-"));
+        fs.mkdirSync(path.join(outside, "ic"));
+        try {
+            assert.strictEqual(
+                resetIncrementalCacheOnce(outside, buildDir),
+                false,
+            );
+            assert.strictEqual(
+                resetIncrementalCacheOnce(path.join(buildDir, ".."), buildDir),
+                false,
+            );
+            assert.strictEqual(
+                resetIncrementalCacheOnce(buildDir, buildDir),
+                false,
+            );
+            assert.strictEqual(fs.existsSync(path.join(outside, "ic")), true);
+        } finally {
+            fs.rmSync(outside, { recursive: true, force: true });
+        }
     });
 });

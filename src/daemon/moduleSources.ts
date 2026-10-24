@@ -67,8 +67,25 @@ export const WHOLE_MODULE_MARKER = "whole-module-sources";
  * anything else in the module. Removing `ic/` makes the next compile, sent without a change
  * set, rebuild the whole module and its cache (the class-path snapshots beside it stay
  * valid). The marker keeps this to once per working dir. Returns whether it reset.
+ *
+ * Deletes only under [moduleBuildDir]: the path comes from `daemon-launch.json`, and the
+ * caller must also have read that from a descriptor this extension's own Gradle run wrote.
  */
-export function resetIncrementalCacheOnce(icWorkingDir: string): boolean {
+export function resetIncrementalCacheOnce(
+    icWorkingDir: string,
+    moduleBuildDir: string,
+): boolean {
+    const relative = path.relative(
+        path.resolve(moduleBuildDir),
+        path.resolve(icWorkingDir),
+    );
+    if (
+        relative === "" ||
+        relative.startsWith("..") ||
+        path.isAbsolute(relative)
+    ) {
+        return false;
+    }
     const marker = path.join(icWorkingDir, WHOLE_MODULE_MARKER);
     if (fs.existsSync(marker)) return false;
     try {
