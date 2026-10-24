@@ -12,6 +12,7 @@ import {
 } from "./gradleService";
 import { JdkImageError } from "./jdkImageErrorDetector";
 import { ClassVersionError } from "./classVersionErrorDetector";
+import { asSentence } from "./gradleFailureDetector";
 import { KotlinCompileError } from "./kotlinCompileErrorDetector";
 import { PreviewPanel } from "./previewPanel";
 import { parseSpatialSceneJson } from "./webview/spatial/sceneLoader";
@@ -8487,7 +8488,10 @@ function emptyStateMessage(activeFile: string | undefined): string {
         return "Configuring Gradle… The first run in a workspace compiles the init script and resolves the plugin, which can take several minutes.";
     }
     if (appliedMarkersBootstrapFailed) {
-        return "Gradle configuration failed — see the Compose Preview output. Refresh to retry.";
+        const cause = gradleService.getAppliedBootstrapFailure();
+        return cause
+            ? `Gradle configuration failed: ${asSentence(cause)} See the Compose Preview output. Refresh to retry.`
+            : "Gradle configuration failed — see the Compose Preview output. Refresh to retry.";
     }
     return "No @Preview functions in this file.";
 }

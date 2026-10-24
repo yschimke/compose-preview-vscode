@@ -22,6 +22,10 @@ import {
     ClassVersionErrorDetector,
 } from "./classVersionErrorDetector";
 import {
+    GradleFailureDetector,
+    GradleTaskFailedError,
+} from "./gradleFailureDetector";
+import {
     KotlinCompileError,
     KotlinCompileErrorDetector,
 } from "./kotlinCompileErrorDetector";
@@ -472,6 +476,11 @@ export class GradleService {
      * are trying to remove.
      */
     private appliedBootstrapPromise: Promise<void> | null = null;
+    /**
+     * Why the last marker bootstrap failed — Gradle's root-cause line, or the
+     * timeout — so the panel can say it. Cleared when a bootstrap succeeds.
+     */
+    private appliedBootstrapFailure: string | null = null;
     /**
      * Wall-clock deadline after which the on-disk `applied.json` markers are
      * considered stale enough to re-run `composePreviewApplied`. Bumped after
@@ -1434,10 +1443,15 @@ export class GradleService {
                 });
                 this.appliedMarkersFreshUntilMs =
                     Date.now() + APPLIED_MARKERS_FRESHNESS_TTL_MS;
+                this.appliedBootstrapFailure = null;
             } catch (e) {
                 this.logger.appendLine(
                     `[applied] composePreviewApplied bootstrap failed: ${(e as Error).message}`,
                 );
+                this.appliedBootstrapFailure =
+                    e instanceof GradleTaskFailedError
+                        ? e.rootCause
+                        : (e as Error).message;
                 // Bootstrap still swallows so the scan fallback can produce a
                 // sensible module list — but if Gradle bailed for a JDK reason
                 // that won't recover on its own, surface it to the caller. The
@@ -1470,6 +1484,14 @@ export class GradleService {
      */
     isAppliedBootstrapInFlight(): boolean {
         return this.appliedBootstrapPromise !== null;
+    }
+
+    /**
+     * Gradle's root-cause line for the last failed marker bootstrap (or its
+     * timeout), or `null` when it succeeded or Gradle gave no cause.
+     */
+    getAppliedBootstrapFailure(): string | null {
+        return this.appliedBootstrapFailure;
     }
 
     private appliedMarkersFresh(): boolean {
@@ -1716,6 +1738,9 @@ export class GradleService {
         // cross-file gap that the LSP-driven gate (compileErrors.ts)
         // misses by design — that gate only inspects the active file.
         const kotlinDetector = new KotlinCompileErrorDetector();
+        // Keeps Gradle's innermost `* What went wrong:` cause for the
+        // generic failure path, so the panel can name it.
+        const failureDetector = new GradleFailureDetector();
 
         const timeoutMs = opts.timeoutMs ?? TASK_TIMEOUT_MS;
         const timeoutPromise = new Promise<never>((_, reject) => {
@@ -1756,6 +1781,7 @@ export class GradleService {
                         detector.consume(decoded);
                         classVersionDetector.consume(decoded);
                         kotlinDetector.consume(decoded);
+                        failureDetector.consume(decoded);
                         const filtered =
                             this.logFilter.filterGradleChunk(decoded);
                         if (filtered.length > 0) {
@@ -1812,8 +1838,10 @@ export class GradleService {
                         throw new KotlinCompileError(kotlinErrors, task);
                     }
                     this.logger.appendLine(`> ${task} FAILED: ${message}`);
-                    throw new Error(
-                        `Gradle task ${task} failed. See Output > Compose Preview.`,
+                    failureDetector.end();
+                    throw new GradleTaskFailedError(
+                        task,
+                        failureDetector.getRootCause(),
                     );
                 },
             )
