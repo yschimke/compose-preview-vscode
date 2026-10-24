@@ -83,6 +83,11 @@ import {
     WarmState,
 } from "./daemon/daemonScheduler";
 import { PendingSourceChanges } from "./daemon/pendingSourceChanges";
+import {
+    compileSourcesFor,
+    resetIncrementalCacheOnce,
+} from "./daemon/moduleSources";
+import { readLaunchDescriptor } from "./daemon/daemonProcess";
 import { ContinuousCompileManager } from "./daemon/continuousCompileManager";
 import { mergeRemoteComposeChange } from "./daemon/remoteComposeMerge";
 import { attachDescriptorProvenanceStore } from "./daemon/descriptorProvenance";
@@ -4569,10 +4574,32 @@ async function runDaemonCompileOnly(filePath: string): Promise<boolean> {
     if (inProcessCompileEnabled() && daemonScheduler) {
         const t0 = Date.now();
         const pending = pendingSourceChanges.snapshot(module.modulePath);
+        const changes = pending?.changes ?? {
+            modified: [filePath],
+            removed: [],
+        };
+        const descriptor = readLaunchDescriptor(
+            gradleService.workspaceRoot,
+            module,
+        );
+        const sourceDirs = descriptor?.sourceWatch?.sourceDirs;
+        const icWorkingDir = descriptor?.btaCompile?.icWorkingDir;
+        // With a fresh cache, send no change set: the daemon's warm compiler only takes an
+        // edit it is told about, so this compile goes to the Build Tools API, which rebuilds
+        // the whole module and so restores any classes an earlier one-file rebuild deleted.
+        const rebuild =
+            !!sourceDirs &&
+            !!icWorkingDir &&
+            resetIncrementalCacheOnce(icWorkingDir);
+        if (rebuild) {
+            logLine(
+                `[compile-in-process] ${module.modulePath} rebuilding the incremental cache from the whole module`,
+            );
+        }
         const outcome = await daemonScheduler.compileSourcesInProcess(
             module,
-            [filePath],
-            pending?.changes,
+            compileSourcesFor(sourceDirs, changes),
+            rebuild ? undefined : pending?.changes,
         );
         const elapsed = Date.now() - t0;
         if (outcome?.result === "ok") {
