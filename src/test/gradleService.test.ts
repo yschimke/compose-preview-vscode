@@ -1504,6 +1504,76 @@ describe("GradleService", () => {
         );
 
         it(
+            "bootstrapAppliedMarkers reports failure and re-runs on the next call",
+            withTempDir(async (dir) => {
+                let calls = 0;
+                let fail = true;
+                const flakyApi: GradleApi = {
+                    async runTask() {
+                        calls++;
+                        if (fail) {
+                            throw new Error("Gradle task timed out");
+                        }
+                    },
+                    async cancelRunTask() {
+                        /* no-op */
+                    },
+                };
+                const service = new GradleService(dir, flakyApi);
+
+                assert.strictEqual(
+                    await service.bootstrapAppliedMarkers(),
+                    false,
+                );
+                assert.strictEqual(service.isAppliedBootstrapInFlight(), false);
+
+                fail = false;
+                assert.strictEqual(
+                    await service.bootstrapAppliedMarkers(),
+                    true,
+                );
+                assert.strictEqual(
+                    calls,
+                    2,
+                    "a failed bootstrap must not be memoised",
+                );
+
+                // Fresh markers short-circuit without another Gradle run.
+                assert.strictEqual(
+                    await service.bootstrapAppliedMarkers(),
+                    true,
+                );
+                assert.strictEqual(calls, 2);
+            }),
+        );
+
+        it(
+            "reports a bootstrap in flight until it settles",
+            withTempDir(async (dir) => {
+                let release: () => void = () => {};
+                const heldApi: GradleApi = {
+                    async runTask() {
+                        await new Promise<void>((r) => {
+                            release = r;
+                        });
+                    },
+                    async cancelRunTask() {
+                        /* no-op */
+                    },
+                };
+                const service = new GradleService(dir, heldApi);
+
+                const applied = service.bootstrapAppliedMarkers();
+                await new Promise((resolve) => setImmediate(resolve));
+                assert.strictEqual(service.isAppliedBootstrapInFlight(), true);
+
+                release();
+                assert.strictEqual(await applied, true);
+                assert.strictEqual(service.isAppliedBootstrapInFlight(), false);
+            }),
+        );
+
+        it(
             "dedupes concurrent composePreviewDiscover for the bundled module against the in-flight bundle",
             withTempDir(async (dir, api) => {
                 writeManifest(dir, "mod");

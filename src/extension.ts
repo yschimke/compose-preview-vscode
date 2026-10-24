@@ -188,6 +188,12 @@ let gradleService: GradleService | null = null;
  * view, reload the webview — doesn't re-enter it.
  */
 let appliedMarkersBootstrap: Promise<boolean> | null = null;
+/**
+ * Set when the last marker bootstrap failed (cleared when one succeeds), so the
+ * no-module empty state can say Gradle failed instead of "No @Preview
+ * functions in this file".
+ */
+let appliedMarkersBootstrapFailed = false;
 let daemonGate: DaemonGate | null = null;
 let daemonScheduler: DaemonScheduler | null = null;
 /** Non-null only when `composePreview.daemon.continuousCompile` is set. */
@@ -508,6 +514,12 @@ function inMinimalMode(): boolean {
  * rather than starting a second. Resolves `true` when markers were actually
  * (re)written — the caller's cue to re-send the module list — and `false` when
  * the run was skipped or failed.
+ *
+ * A *failed* run is not memoised: the next view open or refresh tries again.
+ * Memoising it left a session whose first bootstrap timed out — a cold Gradle
+ * home compiling the init script — reporting "no module" until VS Code was
+ * reloaded, though a second attempt against the now-warm Gradle home would
+ * have succeeded.
  */
 async function ensureAppliedMarkersBootstrapped(): Promise<boolean> {
     if (appliedMarkersBootstrap) {
@@ -532,14 +544,18 @@ async function ensureAppliedMarkersBootstrapped(): Promise<boolean> {
         // build-script scan is a usable fallback); only the typed JDK
         // misconfigurations come back through the callback, and those get the
         // same remediation notifications activation used to show.
-        await service.bootstrapAppliedMarkers((err) => {
+        const written = await service.bootstrapAppliedMarkers((err) => {
             if (err instanceof ClassVersionError) {
                 showClassVersionRemediation(err);
             } else if (err instanceof JdkImageError) {
                 showJdkImageRemediation(err);
             }
         });
-        return true;
+        appliedMarkersBootstrapFailed = !written;
+        if (!written) {
+            appliedMarkersBootstrap = null;
+        }
+        return written;
     })();
     return appliedMarkersBootstrap;
 }
@@ -8444,6 +8460,16 @@ function emptyStateMessage(activeFile: string | undefined): string {
     }
     if (!activeFile || !isPreviewSourceFile(activeFile)) {
         return "Open a Kotlin source file with @Preview functions.";
+    }
+    // A preview source that resolves to no module may just be waiting on
+    // Gradle: until `composePreviewApplied` writes its markers, only the
+    // build-script scan knows the modules, and it misses catalog aliases,
+    // convention plugins and auto-inject.
+    if (gradleService.isAppliedBootstrapInFlight()) {
+        return "Configuring Gradle… The first run in a workspace compiles the init script and resolves the plugin, which can take several minutes.";
+    }
+    if (appliedMarkersBootstrapFailed) {
+        return "Gradle configuration failed — see the Compose Preview output. Refresh to retry.";
     }
     return "No @Preview functions in this file.";
 }
