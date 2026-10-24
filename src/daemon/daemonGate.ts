@@ -22,29 +22,93 @@ export interface DaemonVersionMismatch {
     expectedVersion: string;
 }
 
-/**
- * Returns `daemon-launch.json`'s mtime in milliseconds for [module], or `null` when the file is
- * missing/unstatable. Used by `LiveDaemonGate` to detect when Gradle has re-written the launch
- * descriptor under a still-alive daemon — see the `descriptorMtimeMs` field's kdoc on
- * `ManagedDaemon`. Path mirrors `readLaunchDescriptor`'s. Exported for unit coverage; callers
- * outside this file should not depend on it.
- */
-export function descriptorMtimeMs(
-    workspaceRoot: string,
-    module: ModuleInfo,
-): number | null {
-    const file = path.join(
+function descriptorFile(workspaceRoot: string, module: ModuleInfo): string {
+    return path.join(
         workspaceRoot,
         module.projectDir,
         "build",
         "compose-previews",
         "daemon-launch.json",
     );
+}
+
+/**
+ * Returns `daemon-launch.json`'s mtime in milliseconds for [module], or `null` when the file is
+ * missing/unstatable. Path mirrors `readLaunchDescriptor`'s. Exported for unit coverage; callers
+ * outside this file should not depend on it.
+ */
+export function descriptorMtimeMs(
+    workspaceRoot: string,
+    module: ModuleInfo,
+): number | null {
     try {
-        return fs.statSync(file).mtimeMs;
+        return fs.statSync(descriptorFile(workspaceRoot, module)).mtimeMs;
     } catch {
         return null;
     }
+}
+
+/**
+ * What `LiveDaemonGate` remembers of the `daemon-launch.json` a daemon was spawned from, to tell
+ * a rewrite that changes how the daemon runs from one that does not.
+ */
+export interface DescriptorSnapshot {
+    mtimeMs: number;
+    /** The file's text, or `null` when it could not be read. */
+    content: string | null;
+    /** Whether the descriptor's `manifestPath` (`previews.json`) existed. */
+    manifestPresent: boolean;
+}
+
+/** Reads [module]'s descriptor snapshot, or `null` when the file is missing. */
+export function readDescriptorSnapshot(
+    workspaceRoot: string,
+    module: ModuleInfo,
+): DescriptorSnapshot | null {
+    const mtimeMs = descriptorMtimeMs(workspaceRoot, module);
+    if (mtimeMs === null) {
+        return null;
+    }
+    let content: string | null = null;
+    let manifestPresent = false;
+    try {
+        content = fs.readFileSync(
+            descriptorFile(workspaceRoot, module),
+            "utf-8",
+        );
+        const manifestPath = (JSON.parse(content) as { manifestPath?: unknown })
+            .manifestPath;
+        manifestPresent =
+            typeof manifestPath === "string" &&
+            manifestPath.length > 0 &&
+            fs.existsSync(manifestPath);
+    } catch {
+        /* unreadable or mid-write: treated as changed when compared */
+    }
+    return { mtimeMs, content, manifestPresent };
+}
+
+/**
+ * Whether a daemon spawned from [atSpawn] must be replaced now that the descriptor reads [now].
+ *
+ * `composePreviewDaemonStart` takes `previews.json` as an input, so Gradle rewrites the
+ * descriptor after every discovery that changes the preview list. Respawning on each rewrite
+ * restarted the whole daemon (sandbox pool, warm compiler, JIT) when a preview was added or
+ * renamed, though the daemon's own discovery already tracks those. So only a rewrite that changes
+ * the launch shape (class path, JVM args, properties) respawns, plus the case the mtime watch
+ * exists for: a daemon spawned before the first discovery wrote `previews.json`.
+ */
+export function needsRespawn(
+    atSpawn: DescriptorSnapshot,
+    now: DescriptorSnapshot,
+): boolean {
+    if (now.mtimeMs <= atSpawn.mtimeMs) {
+        return false;
+    }
+    if (atSpawn.content === null || now.content !== atSpawn.content) {
+        return true;
+    }
+    return !atSpawn.manifestPresent && now.manifestPresent;
 }
 
 /**
@@ -186,15 +250,27 @@ export class LiveDaemonGate implements DaemonGate {
             // doesn't keep serving against a stale launch shape. Closes the fresh-module gap left
             // by the `manifestFile.isFile` fallback in `DaemonMain.kt` — without this the daemon
             // would stay in the no-router branch for the rest of the session.
-            const currentMtime = descriptorMtimeMs(this.workspaceRoot, module);
+            const current = existing.descriptor
+                ? readDescriptorSnapshot(this.workspaceRoot, module)
+                : null;
             if (
-                currentMtime !== null &&
-                existing.descriptorMtimeMs !== 0 &&
-                currentMtime > existing.descriptorMtimeMs
+                current &&
+                existing.descriptor &&
+                current.mtimeMs > existing.descriptor.mtimeMs &&
+                !needsRespawn(existing.descriptor, current)
+            ) {
+                // Rewritten with the same launch shape (a discovery changed previews.json):
+                // keep the daemon, and compare later rewrites against this one.
+                existing.descriptor = current;
+            }
+            if (
+                current &&
+                existing.descriptor &&
+                needsRespawn(existing.descriptor, current)
             ) {
                 this.logger.appendLine(
                     `[daemon] launch descriptor changed for ${module.modulePath} ` +
-                        `(mtime ${existing.descriptorMtimeMs} → ${currentMtime}); ` +
+                        `(mtime ${existing.descriptor.mtimeMs} → ${current.mtimeMs}); ` +
                         "disposing alive daemon and re-spawning",
                 );
                 this.daemons.delete(key);
@@ -308,15 +384,13 @@ export class LiveDaemonGate implements DaemonGate {
             logFilter: this.logFilter,
         });
         mySpawned = spawned;
-        // Snapshot the descriptor mtime *after* the JVM is up so subsequent re-entries on this
-        // module compare against the file the daemon was actually launched with. See the
-        // `descriptorMtimeMs` field's kdoc on `ManagedDaemon` for the respawn rationale.
-        const descriptorMtimeMs_ =
-            descriptorMtimeMs(this.workspaceRoot, module) ?? 0;
+        // Snapshot the descriptor *after* the JVM is up so subsequent re-entries on this module
+        // compare against the file the daemon was actually launched with. See the `descriptor`
+        // field's kdoc on `ManagedDaemon` for the respawn rationale.
         this.daemons.set(key, {
             spawned,
             client: spawned.client,
-            descriptorMtimeMs: descriptorMtimeMs_,
+            descriptor: readDescriptorSnapshot(this.workspaceRoot, module),
         });
         const readyLine =
             `[daemon] ready for ${module.modulePath} ` +
@@ -577,16 +651,14 @@ interface ManagedDaemon {
     spawned: SpawnedDaemon;
     client: DaemonClient;
     /**
-     * `daemon-launch.json` mtime captured at spawn time. `LiveDaemonGate.getOrSpawn` compares the
-     * current mtime against this on every re-entry; when Gradle has re-written the descriptor (the
-     * `composePreviewDaemonStart` task got invalidated by its `@Optional @InputFile previewsManifest`
-     * — typically because `composePreviewDiscover` just wrote a fresh `previews.json` — the alive
-     * daemon was launched against a stale manifest and we dispose + respawn it. Without this the
-     * daemon stays stuck in the no-router fallback the `DaemonMain.kt` `manifestFile.isFile` check
-     * dropped it into on first warm. Set to `0` when the descriptor file wasn't statable at spawn
-     * time (treated as "never refresh"; the JVM would have failed to spawn already in that case).
+     * `daemon-launch.json` as it was at spawn time. `LiveDaemonGate.getOrSpawn` re-reads it when
+     * the file's mtime moves and respawns only when [needsRespawn] says the rewrite matters: a
+     * changed launch shape, or a daemon spawned before the first discovery wrote `previews.json`
+     * (it would otherwise stay in `DaemonMain.kt`'s no-manifest fallback for the session). `null`
+     * when the descriptor wasn't readable at spawn (treated as "never refresh"; the JVM would have
+     * failed to spawn already in that case).
      */
-    descriptorMtimeMs: number;
+    descriptor: DescriptorSnapshot | null;
 }
 
 /**
