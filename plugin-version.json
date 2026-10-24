@@ -26,6 +26,6 @@
         "plugin, so scripts/check-daemon-launch-schema.mjs keeps reading it at",
         "`composeAiPlugin`."
     ],
-    "composeAiPlugin": "2.73.2",
-    "composePreviewDaemon": "3.24.3"
+    "composeAiPlugin": "2.74.0",
+    "composePreviewDaemon": "3.25.1"
 }
