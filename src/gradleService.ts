@@ -170,6 +170,21 @@ export function resolveTaskTimeoutMs(raw: string | undefined): number {
     return Math.floor(parsed);
 }
 
+/**
+ * Ceiling for the cold-start invocations — the `composePreviewApplied` marker
+ * bootstrap and [GradleService.coldStartBundle] — which are the runs that pay
+ * a workspace's first-ever costs: compiling the Kotlin-DSL init script,
+ * resolving the plugin and its classpath, and the first configuration of
+ * every module. On a cold Gradle home that legitimately runs past
+ * {@link TASK_TIMEOUT_MS}: a fresh macOS checkout of wear-os-samples'
+ * ComposeStarter was cancelled at exactly 5m00s while Gradle was still
+ * compiling the init script, and because nothing retried, the session showed
+ * "no module" until VS Code was reloaded. The interactive cap is right for a
+ * render someone is waiting on; it is wrong for a one-off setup run whose only
+ * alternative is a dead session.
+ */
+const COLD_START_TASK_TIMEOUT_MS = Math.max(TASK_TIMEOUT_MS, 20 * 60 * 1000);
+
 const MANIFEST_CACHE_TTL_MS = 30_000;
 /**
  * How long after a successful `composePreviewApplied` invocation we treat
@@ -359,6 +374,12 @@ export interface TaskOptions {
      * already triggered a JdkImageError or KotlinCompileError.
      */
     onTaskOutput?: (chunk: string) => void;
+    /**
+     * Ceiling for this invocation, in milliseconds. Defaults to
+     * {@link TASK_TIMEOUT_MS}; the cold-start paths pass
+     * {@link COLD_START_TASK_TIMEOUT_MS}.
+     */
+    timeoutMs?: number;
 }
 
 /**
@@ -1382,18 +1403,21 @@ export class GradleService {
      * instead of the build-script scan.
      *
      * Swallows failures — the scan fallback still produces a sensible list,
-     * and we don't want a misconfigured workspace to fail activation.
+     * and we don't want a misconfigured workspace to fail activation — but
+     * resolves `true` only when fresh markers exist afterwards, whether this
+     * call wrote them or awaited a run that did, so a caller can retry a
+     * bootstrap that timed out or failed instead of treating it as done.
      */
     async bootstrapAppliedMarkers(
         onTypedError?: (err: ClassVersionError | JdkImageError) => void,
-    ): Promise<void> {
+    ): Promise<boolean> {
         // Activation fires this immediately and the first focused-file refresh
         // fires [coldStartBundle] for its module ~100-1000ms later. The two
         // would otherwise both run `composePreviewApplied` against a cold
         // Gradle daemon — two task-graph calculations of ~2 min each. Coalesce
         // so the second caller awaits the first's Gradle invocation instead.
-        if (Date.now() < this.appliedMarkersFreshUntilMs) {
-            return;
+        if (this.appliedMarkersFresh()) {
+            return true;
         }
         if (this.appliedBootstrapPromise) {
             try {
@@ -1401,11 +1425,13 @@ export class GradleService {
             } catch {
                 /* originator logged + dispatched to onTypedError */
             }
-            return;
+            return this.appliedMarkersFresh();
         }
         const promise = (async () => {
             try {
-                await this.runTask("composePreviewApplied");
+                await this.runTask("composePreviewApplied", [], {
+                    timeoutMs: COLD_START_TASK_TIMEOUT_MS,
+                });
                 this.appliedMarkersFreshUntilMs =
                     Date.now() + APPLIED_MARKERS_FRESHNESS_TTL_MS;
             } catch (e) {
@@ -1434,6 +1460,20 @@ export class GradleService {
                 this.appliedBootstrapPromise = null;
             }
         }
+        return this.appliedMarkersFresh();
+    }
+
+    /**
+     * Whether a `composePreviewApplied` run — the bootstrap or a cold-start
+     * bundle carrying it — is in flight, so a file that resolves to no module
+     * may only be waiting on Gradle rather than outside every preview module.
+     */
+    isAppliedBootstrapInFlight(): boolean {
+        return this.appliedBootstrapPromise !== null;
+    }
+
+    private appliedMarkersFresh(): boolean {
+        return Date.now() < this.appliedMarkersFreshUntilMs;
     }
 
     /**
@@ -1548,7 +1588,10 @@ export class GradleService {
                     /* surfaced by the bootstrap originator */
                 }
             }
-            await this.runTask(headTask, tailTasks, opts);
+            await this.runTask(headTask, tailTasks, {
+                ...opts,
+                timeoutMs: opts?.timeoutMs ?? COLD_START_TASK_TIMEOUT_MS,
+            });
             // Every cold-start bundle runs `composePreviewDaemonStart`, so the descriptor on disk
             // now is one Gradle wrote for us — the only kind the daemon gate will spawn from.
             recordProducedDescriptor(this.workspaceRoot, module);
@@ -1674,6 +1717,7 @@ export class GradleService {
         // misses by design — that gate only inspects the active file.
         const kotlinDetector = new KotlinCompileErrorDetector();
 
+        const timeoutMs = opts.timeoutMs ?? TASK_TIMEOUT_MS;
         const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => {
                 this.gradleApi
@@ -1687,10 +1731,10 @@ export class GradleService {
                     });
                 reject(
                     new Error(
-                        `Gradle task ${task} timed out after ${TASK_TIMEOUT_MS / 1000}s`,
+                        `Gradle task ${task} timed out after ${timeoutMs / 1000}s`,
                     ),
                 );
-            }, TASK_TIMEOUT_MS);
+            }, timeoutMs);
         });
 
         const taskPromise = this.gradleApi
