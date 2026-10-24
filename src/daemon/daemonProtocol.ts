@@ -1367,6 +1367,11 @@ export interface DaemonLaunchDescriptor {
      * back to stage 1 (`gradle --continuous`) or stage 0 (one-shot Gradle).
      */
     btaCompile: BtaCompileConfig | null;
+    /**
+     * Where the module is built from, for clients that watch or compile it. Absent from
+     * descriptors written before the plugin published it.
+     */
+    sourceWatch?: { sourceDirs: string[]; resourceDirs: string[] } | null;
 }
 
 /**
