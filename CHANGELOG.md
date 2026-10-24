@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.51.1](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.0...v1.51.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* adopt compose-ai-tools 2.73.2 ([#90](https://github.com/yschimke/compose-preview-vscode/issues/90)) ([e281de0](https://github.com/yschimke/compose-preview-vscode/commit/e281de01f4dd184e550654d2ace19a753434b4b6))
+* only reset an incremental cache a produced descriptor names, inside the module ([#85](https://github.com/yschimke/compose-preview-vscode/issues/85)) ([2d464f4](https://github.com/yschimke/compose-preview-vscode/commit/2d464f4bb343e468ef3c4f92580ec1da8f5042c3))
+* respawn the daemon only when its launch shape changes ([#86](https://github.com/yschimke/compose-preview-vscode/issues/86)) ([6dbbeee](https://github.com/yschimke/compose-preview-vscode/commit/6dbbeee048a182f0e7e3a9c33cb6ea9d64ab4695))
+* send compileSources the whole module, and recover a cache built without it ([#84](https://github.com/yschimke/compose-preview-vscode/issues/84)) ([54ac594](https://github.com/yschimke/compose-preview-vscode/commit/54ac594e1b67afb7e00bf80fb0f0cec76b8a76f4))
+
+
+### Performance
+
+* adopt compose-ai-tools 2.73.1 (daemon 3.24.2) ([#88](https://github.com/yschimke/compose-preview-vscode/issues/88)) ([4d6a314](https://github.com/yschimke/compose-preview-vscode/commit/4d6a3143660ba1ae437a5221d8cdf063fdc1aeaf))
+* drop the save debounce and unrequested data products from the edit loop ([#89](https://github.com/yschimke/compose-preview-vscode/issues/89)) ([f00d130](https://github.com/yschimke/compose-preview-vscode/commit/f00d130d28fe35439e79a3ee21e21794ca41771b))
+* focus the edited preview on save, not every preview in the file ([#87](https://github.com/yschimke/compose-preview-vscode/issues/87)) ([036816e](https://github.com/yschimke/compose-preview-vscode/commit/036816e140abaab9fc69effd8fd1ee27a954b742))
+* let the daemon's warm compiler take in-process compiles ([#82](https://github.com/yschimke/compose-preview-vscode/issues/82)) ([29fd4c2](https://github.com/yschimke/compose-preview-vscode/commit/29fd4c2f4e02a6a663e1ed02153f34885d4329b2))
+* stop a save during reconcile from forcing a full rediscover ([#79](https://github.com/yschimke/compose-preview-vscode/issues/79)) ([39bbea6](https://github.com/yschimke/compose-preview-vscode/commit/39bbea64933991661ef028c0a76cc16a129c2416))
+
 ## [1.51.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.50.1...v1.51.0) (2026-10-21)
 
 
