@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.51.3](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.2...v1.51.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* give the cold-start Gradle bootstrap room, say it is running, and retry it after a failure ([#93](https://github.com/yschimke/compose-preview-vscode/issues/93)) ([3fe2a0d](https://github.com/yschimke/compose-preview-vscode/commit/3fe2a0d962318cccd618020d27fe4fccf79d6c04))
+* name Gradle's root cause when a task or the marker bootstrap fails ([#96](https://github.com/yschimke/compose-preview-vscode/issues/96)) ([e03dea7](https://github.com/yschimke/compose-preview-vscode/commit/e03dea7ee360b25e37c4329ada743a9dc87cae84))
+* replace "Configuring Gradle…" when the marker bootstrap fails ([#95](https://github.com/yschimke/compose-preview-vscode/issues/95)) ([7c3cba0](https://github.com/yschimke/compose-preview-vscode/commit/7c3cba0456380f6d193e58f90260a95f3d8718ef))
+
 ## [1.51.2](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.1...v1.51.2) (2026-10-24)
 
 
