@@ -68,7 +68,7 @@ jobs:
       # runner is fast enough for a once-per-release job.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.22.1
+          node-version: 24.22.2
           package-manager-cache: false
 
       # Fail before building rather than after publishing. A VSIX whose pin names
@@ -214,7 +214,7 @@ jobs:
           path: dist
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.22.1
+          node-version: 24.22.2
           package-manager-cache: false
       - name: Publish to VS Code Marketplace
         env:
