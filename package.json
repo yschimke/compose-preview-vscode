@@ -740,7 +740,7 @@
         "typescript": "7.0.2"
     },
     "overrides": {
-        "qs": "6.17.0",
+        "qs": "6.17.1",
         "serialize-javascript": "7.1.4"
     },
     "dependencies": {
