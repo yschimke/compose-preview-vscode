@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.4](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.3...v1.51.4) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency three to v0.187.0 ([#107](https://github.com/yschimke/compose-preview-vscode/issues/107)) ([b8a77b6](https://github.com/yschimke/compose-preview-vscode/commit/b8a77b6e7578614e1e0dd504ecdc7d5164c45d27))
+
 ## [1.51.3](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.2...v1.51.3) (2026-10-24)
 
 
