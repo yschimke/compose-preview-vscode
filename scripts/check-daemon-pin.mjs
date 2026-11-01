@@ -18,7 +18,7 @@
 // `composeAiPlugin` bump. So it is read back from the published POM instead of
 // trusted.
 
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -87,27 +87,26 @@ export async function fetchToolsBom(pluginVersion) {
     return { pom: await response.text(), source: url };
 }
 
-export async function checkDaemonPin({
-    repoRoot = defaultRepoRoot,
-    pom,
-    pomSource = "provided POM",
-} = {}) {
-    const pin = JSON.parse(
-        await readFile(resolve(repoRoot, "plugin-version.json"), "utf8"),
-    );
+async function readPin(repoRoot) {
+    const path = resolve(repoRoot, "plugin-version.json");
+    const text = await readFile(path, "utf8");
+    const pin = JSON.parse(text);
     const pluginVersion = pin.composeAiPlugin;
-    const daemonVersion = pin.composePreviewDaemon;
     if (typeof pluginVersion !== "string" || pluginVersion.length === 0) {
         throw new Error(
             "plugin-version.json has no non-empty composeAiPlugin pin",
         );
     }
-    if (typeof daemonVersion !== "string" || daemonVersion.length === 0) {
-        throw new Error(
-            "plugin-version.json has no non-empty composePreviewDaemon pin; it names the yschimke/compose-preview-daemon release the pinned plugin resolves",
-        );
-    }
+    return {
+        path,
+        text,
+        pluginVersion,
+        daemonVersion: pin.composePreviewDaemon,
+    };
+}
 
+/** The daemon release the pinned plugin's published BOM imports. */
+async function publishedDaemonVersion(pluginVersion, pom, pomSource) {
     let resolvedPom = pom;
     let resolvedSource = pomSource;
     if (resolvedPom === undefined) {
@@ -127,16 +126,97 @@ export async function checkDaemonPin({
             `${resolvedSource} imports no ${DAEMON_BOM}, so the daemon version plugin ${pluginVersion} resolves cannot be read from it. If compose-ai-tools stopped importing the BOM, this gate needs a new anchor — do not drop the check.`,
         );
     }
-    if (published !== daemonVersion) {
+    return { published, source: resolvedSource };
+}
+
+export async function checkDaemonPin({
+    repoRoot = defaultRepoRoot,
+    pom,
+    pomSource = "provided POM",
+} = {}) {
+    const { pluginVersion, daemonVersion } = await readPin(repoRoot);
+    if (typeof daemonVersion !== "string" || daemonVersion.length === 0) {
         throw new Error(
-            `plugin-version.json pins composePreviewDaemon ${daemonVersion}, but plugin ${pluginVersion} resolves the daemon at ${published} (${resolvedSource}). Set composePreviewDaemon to ${published} and re-run scripts/sync-protocol-fixtures.sh.`,
+            "plugin-version.json has no non-empty composePreviewDaemon pin; it names the yschimke/compose-preview-daemon release the pinned plugin resolves",
         );
     }
 
-    return { pluginVersion, daemonVersion, pomSource: resolvedSource };
+    const { published, source } = await publishedDaemonVersion(
+        pluginVersion,
+        pom,
+        pomSource,
+    );
+    if (published !== daemonVersion) {
+        throw new Error(
+            `plugin-version.json pins composePreviewDaemon ${daemonVersion}, but plugin ${pluginVersion} resolves the daemon at ${published} (${source}). Set composePreviewDaemon to ${published} and re-run scripts/sync-protocol-fixtures.sh, or run this script with --write.`,
+        );
+    }
+
+    return { pluginVersion, daemonVersion, pomSource: source };
+}
+
+/**
+ * Rewrites `composePreviewDaemon` in place to the release the pinned plugin
+ * resolves. Used by the `Sync daemon pin` workflow on Renovate's plugin bumps,
+ * which change `composeAiPlugin` and cannot derive this second value. Only the
+ * value is replaced, so the file's comments and layout survive untouched.
+ */
+export async function writeDaemonPin({
+    repoRoot = defaultRepoRoot,
+    pom,
+    pomSource = "provided POM",
+} = {}) {
+    const { path, text, pluginVersion, daemonVersion } =
+        await readPin(repoRoot);
+    const { published } = await publishedDaemonVersion(
+        pluginVersion,
+        pom,
+        pomSource,
+    );
+    if (published === daemonVersion) {
+        return {
+            pluginVersion,
+            previous: daemonVersion,
+            daemonVersion: published,
+            changed: false,
+        };
+    }
+
+    const field = /("composePreviewDaemon"\s*:\s*")[^"\n]*(")/g;
+    const matches = text.match(field) ?? [];
+    if (matches.length !== 1) {
+        throw new Error(
+            `plugin-version.json has ${matches.length} composePreviewDaemon fields; expected exactly one to rewrite`,
+        );
+    }
+    const rewritten = text.replace(field, `$1${published}$2`);
+    if (JSON.parse(rewritten).composePreviewDaemon !== published) {
+        throw new Error("rewriting composePreviewDaemon did not take");
+    }
+    await writeFile(path, rewritten);
+    return {
+        pluginVersion,
+        previous: daemonVersion,
+        daemonVersion: published,
+        changed: true,
+    };
 }
 
 async function main() {
+    if (process.argv.includes("--write")) {
+        try {
+            const result = await writeDaemonPin();
+            console.log(
+                result.changed
+                    ? `daemon pin: plugin ${result.pluginVersion} resolves compose-preview-daemon ${result.daemonVersion}; rewrote composePreviewDaemon from ${result.previous}`
+                    : `daemon pin: plugin ${result.pluginVersion} resolves compose-preview-daemon ${result.daemonVersion}; already pinned`,
+            );
+        } catch (error) {
+            console.error(`daemon pin: FAILED — ${error.message}`);
+            process.exitCode = 1;
+        }
+        return;
+    }
     try {
         const result = await checkDaemonPin();
         console.log(
