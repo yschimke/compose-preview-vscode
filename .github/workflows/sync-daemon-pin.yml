@@ -67,7 +67,15 @@ jobs:
           git add -A -- plugin-version.json protocol-fixtures
           if git diff --cached --quiet; then
             echo "composePreviewDaemon and protocol-fixtures/ already match the pinned plugin"
-            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            # A head this job committed itself means an earlier run pushed and then
+            # failed to dispatch, or this is a re-run of that run. Dispatch again,
+            # or the head keeps no required checks and auto-merge waits forever.
+            if [ "$(git log -1 --format=%ae)" = '41898282+github-actions[bot]@users.noreply.github.com' ]; then
+              echo "head is this job's own sync commit; dispatching its checks again"
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "pushed=false" >> "$GITHUB_OUTPUT"
+            fi
             exit 0
           fi
           daemon="$(node -e 'process.stdout.write(require("./plugin-version.json").composePreviewDaemon)')"
