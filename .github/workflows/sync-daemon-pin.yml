@@ -1,0 +1,110 @@
+# Finish Renovate's compose-ai-tools pin bumps.
+#
+# Renovate moves `composeAiPlugin` in plugin-version.json and nothing else. The
+# file's second value, `composePreviewDaemon`, is DERIVED — it is whatever
+# compose-preview-daemon release that plugin's `compose-ai-tools-bom` imports —
+# and `protocol-fixtures/` is a copy taken at that daemon tag. Renovate can derive
+# neither, so every bump that moved the daemon sat red on `Build and test`,
+# `Plugin Pin` and `Protocol Fixtures` until a person pushed the two follow-ups
+# (#109, #114). There is nothing to decide in them: this job writes both and
+# pushes the result onto the Renovate branch. Modelled on compose-preview-server's
+# `Regenerate goldens`.
+#
+# Renovate branches only. A person bumping the pin by hand can run the same two
+# commands, and the checks tell them to.
+name: Sync daemon pin
+
+on:
+  pull_request:
+    paths: [plugin-version.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-daemon-pin-${{ github.head_ref }}
+  # Never cancel. A cancelled run can leave a pushed commit without the check
+  # dispatches that follow it, which is the one state this workflow must not produce.
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Resync the derived daemon pin
+    # `renovate/compose-ai-tools` is the branch the `compose-ai-tools` group in
+    # renovate.json produces. Same-repository heads only: this job pushes.
+    if: >-
+      startsWith(github.head_ref, 'renovate/compose-ai-tools') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # `gh workflow run` below. A push made with GITHUB_TOKEN starts no workflow,
+      # so without the dispatches the new head would carry no checks at all.
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          # Kept, unlike every other checkout here: this job's product is a commit
+          # on that branch.
+          persist-credentials: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26.13.0
+          package-manager-cache: false
+      - name: Rewrite composePreviewDaemon from the plugin's published BOM
+        run: node scripts/check-daemon-pin.mjs --write
+      - name: Resync the vendored protocol fixtures
+        run: scripts/sync-protocol-fixtures.sh
+      - name: Commit and push
+        id: push
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          # Every path the two steps above write. One they write but this line
+          # does not stage is reported as "already in sync" while pushing nothing.
+          git add -A -- plugin-version.json protocol-fixtures
+          if git diff --cached --quiet; then
+            echo "composePreviewDaemon and protocol-fixtures/ already match the pinned plugin"
+            # A head this job committed itself means an earlier run pushed and then
+            # failed to dispatch, or this is a re-run of that run. Dispatch again,
+            # or the head keeps no required checks and auto-merge waits forever.
+            if [ "$(git log -1 --format=%ae)" = '41898282+github-actions[bot]@users.noreply.github.com' ]; then
+              echo "head is this job's own sync commit; dispatching its checks again"
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "pushed=false" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
+          daemon="$(node -e 'process.stdout.write(require("./plugin-version.json").composePreviewDaemon)')"
+          # Committed as the Actions bot, a bot account rather than an agent
+          # identity (see the attribution rule in AGENTS.md). renovate.json lists
+          # it in `gitIgnoredAuthors`, so Renovate still treats the branch as its own.
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(deps): resync composePreviewDaemon ${daemon} and protocol fixtures" \
+            -m "Written by scripts/check-daemon-pin.mjs --write and scripts/sync-protocol-fixtures.sh."
+          # A plain push is fast-forward only: if Renovate rebased meanwhile it is
+          # refused, and the rebase's own pull_request event runs this job again.
+          git push origin "HEAD:${BRANCH}"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Run the checks on the new head
+        # A push authenticated with GITHUB_TOKEN raises no `pull_request` event, so
+        # every check has to be asked for by name. The first three are the
+        # `Protect Main` ruleset's required checks; without them auto-merge waits
+        # forever. The last two are the checks this commit exists to turn green.
+        if: ${{ steps.push.outputs.pushed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh workflow run ci.yml --ref "${BRANCH}"
+          gh workflow run pr-title.yml --ref "${BRANCH}" -f pr="${PR}"
+          gh workflow run no-agent-attribution.yml --ref "${BRANCH}" -f pr="${PR}"
+          gh workflow run plugin-pin.yml --ref "${BRANCH}"
+          gh workflow run protocol-fixtures.yml --ref "${BRANCH}"

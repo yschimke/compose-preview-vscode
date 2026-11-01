@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, it } from "node:test";
@@ -8,6 +8,7 @@ import {
     checkDaemonPin,
     daemonBomVersionIn,
     pomUrl,
+    writeDaemonPin,
 } from "./check-daemon-pin.mjs";
 
 const temporaryRoots = [];
@@ -42,16 +43,21 @@ afterEach(async () => {
     );
 });
 
-async function fixture(pin) {
+async function fixture(pin, { indent } = {}) {
     const root = await mkdtemp(join(tmpdir(), "daemon-pin-"));
     temporaryRoots.push(root);
     await writeFile(
         join(root, "plugin-version.json"),
-        JSON.stringify({
-            composeAiPlugin: "2.18.1",
-            composePreviewDaemon: "3.8.0",
-            ...pin,
-        }),
+        JSON.stringify(
+            {
+                _comment: ["kept as written"],
+                composeAiPlugin: "2.18.1",
+                composePreviewDaemon: "3.8.0",
+                ...pin,
+            },
+            null,
+            indent,
+        ) + "\n",
     );
     return root;
 }
@@ -133,6 +139,71 @@ describe("daemon pin gate", () => {
         assert.equal(
             pomUrl("2.18.1"),
             "https://repo1.maven.org/maven2/ee/schimke/composeai/compose-ai-tools-bom/2.18.1/compose-ai-tools-bom-2.18.1.pom",
+        );
+    });
+
+    it("rewrites a skewed daemon pin and leaves the rest of the file alone", async () => {
+        const root = await fixture(
+            { composePreviewDaemon: "3.6.1" },
+            { indent: 4 },
+        );
+        const before = await readFile(
+            join(root, "plugin-version.json"),
+            "utf8",
+        );
+        const result = await writeDaemonPin({
+            repoRoot: root,
+            pom: pom(bomImport("3.8.0")),
+        });
+        assert.deepEqual(result, {
+            pluginVersion: "2.18.1",
+            previous: "3.6.1",
+            daemonVersion: "3.8.0",
+            changed: true,
+        });
+        const after = await readFile(join(root, "plugin-version.json"), "utf8");
+        assert.equal(
+            after,
+            before.replace(
+                '"composePreviewDaemon": "3.6.1"',
+                '"composePreviewDaemon": "3.8.0"',
+            ),
+        );
+        await checkDaemonPin({ repoRoot: root, pom: pom(bomImport("3.8.0")) });
+    });
+
+    it("leaves a matching daemon pin untouched", async () => {
+        const root = await fixture({});
+        const before = await readFile(
+            join(root, "plugin-version.json"),
+            "utf8",
+        );
+        const result = await writeDaemonPin({
+            repoRoot: root,
+            pom: pom(bomImport("3.8.0")),
+        });
+        assert.equal(result.changed, false);
+        assert.equal(
+            await readFile(join(root, "plugin-version.json"), "utf8"),
+            before,
+        );
+    });
+
+    it("fills in a missing daemon pin field's value", async () => {
+        const root = await fixture({ composePreviewDaemon: "" });
+        const result = await writeDaemonPin({
+            repoRoot: root,
+            pom: pom(bomImport("3.8.0")),
+        });
+        assert.equal(result.changed, true);
+        await checkDaemonPin({ repoRoot: root, pom: pom(bomImport("3.8.0")) });
+    });
+
+    it("refuses to guess when the POM imports no daemon BOM", async () => {
+        const root = await fixture({ composePreviewDaemon: "3.6.1" });
+        await assert.rejects(
+            writeDaemonPin({ repoRoot: root, pom: pom("") }),
+            /imports no compose-preview-daemon-bom/,
         );
     });
 });
