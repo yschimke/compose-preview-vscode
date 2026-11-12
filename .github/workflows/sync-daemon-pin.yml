@@ -50,7 +50,7 @@ jobs:
           persist-credentials: true
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           package-manager-cache: false
       - name: Rewrite composePreviewDaemon from the plugin's published BOM
         run: node scripts/check-daemon-pin.mjs --write
