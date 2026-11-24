@@ -19,8 +19,8 @@ export interface UiBuilderWebPin {
 }
 
 export const UI_BUILDER_WEB_PIN: UiBuilderWebPin = {
-    version: "3.50.0",
-    sha256: "32903bee6504b4b02ff8db88212ecae8eb5dd28aea363f40c122a4776fff4c0a",
+    version: "3.157.0",
+    sha256: "607be3da42f1d3d69cbdf164525a525c63f1ff16fe239179a9315e2084c95437",
 };
 
 export function uiBuilderWebArchiveUrl(version: string): string {

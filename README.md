@@ -73,16 +73,12 @@ To opt in manually instead, add
 [`ee.schimke.composeai.preview`](https://central.sonatype.com/artifact/ee.schimke.composeai/compose-preview-plugin)
 to the module whose previews you want to render:
 
-<!-- x-release-please-start-version -->
-
 ```kotlin
 // <module>/build.gradle.kts
 plugins {
-    id("ee.schimke.composeai.preview") version "1.46.2"
+    id("ee.schimke.composeai.preview") version "2.103.0"
 }
 ```
-
-<!-- x-release-please-end -->
 
 The plugin is on Maven Central, so no extra repository setup is needed when
 `mavenCentral()` is already in your `pluginManagement.repositories`. See the
