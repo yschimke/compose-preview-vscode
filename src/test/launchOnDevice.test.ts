@@ -485,7 +485,7 @@ describe("resolveGradlewPath / runGradleInstallDebugForSerial", () => {
             const gradlew = path.join(dir, "gradlew");
             fs.writeFileSync(
                 gradlew,
-                '#!/bin/sh\necho "SERIAL=$ANDROID_SERIAL TASK=$1"\n',
+                '#!/bin/sh\necho "SERIAL=$ANDROID_SERIAL JAVA=$JAVA_HOME TASK=$1"\n',
                 { mode: 0o755 },
             );
             assert.strictEqual(resolveGradlewPath(dir), gradlew);
@@ -493,11 +493,12 @@ describe("resolveGradlewPath / runGradleInstallDebugForSerial", () => {
                 workspaceRoot: dir,
                 modulePath: ":app",
                 serial: "emulator-5554",
+                javaHome: "/opt/jdk-21",
             });
             assert.strictEqual(res.code, 0);
             assert.strictEqual(
                 res.stdout.trim(),
-                "SERIAL=emulator-5554 TASK=:app:installDebug",
+                "SERIAL=emulator-5554 JAVA=/opt/jdk-21 TASK=:app:installDebug",
             );
         }),
     );

@@ -7372,12 +7372,18 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
                         message: `Building & installing splits on ${serial} (installDebug)…`,
                     });
                     try {
+                        const gradleJavaHome =
+                            vscode.workspace
+                                .getConfiguration()
+                                .get<string>("java.import.gradle.java.home")
+                                ?.trim() || undefined;
                         const installResult =
                             await runGradleInstallDebugForSerial({
                                 workspaceRoot: gradleService!.workspaceRoot,
                                 modulePath: module.modulePath,
                                 serial,
                                 sdkRoot,
+                                javaHome: gradleJavaHome,
                             });
                         if (installResult.code !== 0) {
                             const detail = (

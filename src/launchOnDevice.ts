@@ -306,6 +306,7 @@ export function runGradleInstallDebugForSerial(opts: {
     modulePath: string;
     serial: string;
     sdkRoot?: string | null;
+    javaHome?: string | null;
 }): Promise<AdbResult> {
     const gradlew = resolveGradlewPath(opts.workspaceRoot);
     const env: NodeJS.ProcessEnv = {
@@ -315,6 +316,14 @@ export function runGradleInstallDebugForSerial(opts: {
     if (opts.sdkRoot) {
         env.ANDROID_HOME = opts.sdkRoot;
         env.ANDROID_SDK_ROOT = opts.sdkRoot;
+    }
+    const trimmedJavaHome = opts.javaHome?.trim();
+    if (trimmedJavaHome) {
+        env.JAVA_HOME = trimmedJavaHome;
+        const javaBin = path.join(trimmedJavaHome, "bin");
+        env.PATH = env.PATH
+            ? `${javaBin}${path.delimiter}${env.PATH}`
+            : javaBin;
     }
     const taskName = `${opts.modulePath}:installDebug`;
     return new Promise((resolve, reject) => {
