@@ -139,6 +139,16 @@ import {
     resolveAdbPath,
     runAdb,
 } from "./launchOnDevice";
+import { BundleCliNotFoundError, locateBundleCli } from "./bundleRender";
+import {
+    AdbDevice,
+    SelectedDeviceTarget,
+    SimulatorProcessManager,
+    buildDevicePickerItems,
+    formatSelectedDeviceStatus,
+    getSimulatorProfile,
+    parseAdbDevicesOutput,
+} from "./simulatorDevice";
 import {
     hasFreshRenderStamp,
     writeRenderFreshnessStamp,
@@ -201,6 +211,11 @@ let daemonScheduler: DaemonScheduler | null = null;
 let continuousCompileManager: ContinuousCompileManager | null = null;
 let daemonStatusItem: vscode.StatusBarItem | null = null;
 let interactiveStatusItem: vscode.StatusBarItem | null = null;
+let deviceStatusItem: vscode.StatusBarItem | null = null;
+let simulatorProcessManager: SimulatorProcessManager | null = null;
+let selectedDeviceTarget: SelectedDeviceTarget | null = null;
+let extensionWorkspaceState: vscode.Memento | null = null;
+const SELECTED_DEVICE_STATE_KEY = "composePreview.selectedDeviceTarget";
 let daemonStatusClearTimer: NodeJS.Timeout | null = null;
 /** Indicator for "data extension subscribed, first payload not yet received."
  *  Lives in the VS Code status bar so the signal is visible even when the
@@ -1679,6 +1694,25 @@ export async function activate(
     );
     dataExtensionStatusItem.command = "workbench.action.output.toggleOutput";
     context.subscriptions.push(dataExtensionStatusItem);
+
+    extensionWorkspaceState = context.workspaceState;
+    selectedDeviceTarget =
+        context.workspaceState.get<SelectedDeviceTarget | null>(
+            SELECTED_DEVICE_STATE_KEY,
+            null,
+        ) ?? null;
+    simulatorProcessManager = new SimulatorProcessManager();
+    deviceStatusItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        87,
+    );
+    deviceStatusItem.command = "composePreview.selectDevice";
+    context.subscriptions.push(deviceStatusItem);
+    const simChangeSub = simulatorProcessManager.onDidChange(() =>
+        updateDeviceStatusItem(),
+    );
+    context.subscriptions.push({ dispose: () => simChangeSub.dispose() });
+    updateDeviceStatusItem();
     dataExtensionTracker = new DataExtensionProgressTracker({
         onProgress: (post) => {
             // Don't fight a real refresh for the slim bar — its phase labels
@@ -2306,6 +2340,12 @@ export async function activate(
             "composePreview.launchOnDevice",
             (previewId?: string) => launchOnDevice(previewId),
         ),
+        vscode.commands.registerCommand("composePreview.selectDevice", () =>
+            selectDeviceTargetCommand(),
+        ),
+        vscode.commands.registerCommand("composePreview.stopSimulators", () =>
+            stopSimulatorsCommand(),
+        ),
         vscode.commands.registerCommand(
             "composePreview.openBundle",
             (resource?: vscode.Uri) => {
@@ -2657,6 +2697,7 @@ export async function activate(
                 // gradleService; re-point it at the injected one so its workers
                 // register on the service `compileOnly()` actually queries.
                 continuousCompileManager?.rebindGradleService(gradleService);
+                updateDeviceStatusItem();
             },
             triggerRefresh(
                 filePath: string,
@@ -2852,6 +2893,7 @@ export function deactivate() {
     // stdin to each worker's `gradle --continuous` subprocess; falls back
     // to SIGTERM after a grace window if Gradle is wedged.
     void continuousCompileManager?.disposeAll();
+    void simulatorProcessManager?.dispose();
     disposePreviewMainBatches();
 }
 
@@ -7057,6 +7099,221 @@ async function runLivePreviewDiff(
  * `parameterProviderIndex`) are forwarded too, so a parameterised preview
  * lands on the right provider value rather than the first one.
  */
+function updateDeviceStatusItem(): void {
+    if (!deviceStatusItem) {
+        return;
+    }
+    const running = simulatorProcessManager?.runningSnapshot() ?? new Map();
+    const hasAndroidApps =
+        gradleService !== null &&
+        collectAndroidApplicationModules(
+            gradleService.workspaceRoot,
+            gradleService.findPreviewModules(),
+        ).length > 0;
+    if (
+        !hasAndroidApps &&
+        !selectedDeviceTarget &&
+        running.size === 0 &&
+        (simulatorProcessManager?.startingProfiles().size ?? 0) === 0
+    ) {
+        deviceStatusItem.hide();
+        return;
+    }
+    const status = formatSelectedDeviceStatus(selectedDeviceTarget, running);
+    deviceStatusItem.text = status.text;
+    deviceStatusItem.tooltip = status.tooltip;
+    deviceStatusItem.show();
+}
+
+async function setSelectedDeviceTarget(
+    target: SelectedDeviceTarget | null,
+): Promise<void> {
+    selectedDeviceTarget = target;
+    await extensionWorkspaceState?.update(SELECTED_DEVICE_STATE_KEY, target);
+    updateDeviceStatusItem();
+}
+
+async function queryAdbDevices(adbPath: string): Promise<AdbDevice[]> {
+    try {
+        const res = await runAdb(adbPath, ["devices", "-l"]);
+        if (res.code !== 0) {
+            return [];
+        }
+        return parseAdbDevicesOutput(res.stdout);
+    } catch {
+        return [];
+    }
+}
+
+async function pickDeviceTarget(
+    adbPath: string,
+): Promise<SelectedDeviceTarget | null> {
+    const adbDevices = await queryAdbDevices(adbPath);
+    const manager = simulatorProcessManager;
+    const items = buildDevicePickerItems({
+        adbDevices,
+        runningSimulators: manager?.runningSnapshot() ?? new Map(),
+        startingProfiles: manager?.startingProfiles() ?? new Set(),
+        selectedTarget: selectedDeviceTarget,
+    });
+    const picked = await vscode.window.showQuickPick(items, {
+        title: "Compose Preview: Select Android Device / Simulator",
+        placeHolder:
+            "Choose a connected ADB device or an on-demand Compose Preview Simulator",
+        matchOnDescription: true,
+        matchOnDetail: true,
+    });
+    if (!picked) {
+        return null;
+    }
+    if (picked.target.kind === "stopSimulators") {
+        await stopSimulatorsCommand();
+        return null;
+    }
+    await setSelectedDeviceTarget(picked.target);
+    return picked.target;
+}
+
+async function startSelectedSimulator(
+    profile: "phone" | "wear",
+    progress?: vscode.Progress<{ message?: string }>,
+): Promise<string | null> {
+    const manager = simulatorProcessManager;
+    if (!manager) {
+        return null;
+    }
+    const existing = manager.runningInfo(profile);
+    if (existing) {
+        return existing.serial;
+    }
+    const spec = getSimulatorProfile(profile);
+    let cliPath: string;
+    try {
+        cliPath = await locateBundleCli();
+    } catch (e: unknown) {
+        const msg =
+            e instanceof BundleCliNotFoundError
+                ? e.message
+                : e instanceof Error
+                  ? e.message
+                  : String(e);
+        vscode.window.showErrorMessage(
+            `Compose Preview: cannot start ${spec.displayName} — ${msg}`,
+        );
+        return null;
+    }
+    progress?.report({ message: `Starting ${spec.displayName}…` });
+    try {
+        const info = await manager.start({
+            cliExecutable: cliPath,
+            profile,
+            cwd: gradleService?.workspaceRoot,
+            onLog: (line) => logLine(`[simulator:${profile}] ${line}`),
+        });
+        logLine(
+            `${spec.displayName} ready on ${info.serial} (adb:${info.adbPort})`,
+        );
+        return info.serial;
+    } catch (e: unknown) {
+        const m = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(
+            `Compose Preview: failed to start ${spec.displayName} — ${m}`,
+        );
+        return null;
+    }
+}
+
+async function selectDeviceTargetCommand(): Promise<void> {
+    const sdkRoot = gradleService
+        ? findAndroidSdkRoot(gradleService.workspaceRoot)
+        : null;
+    const adbPath = resolveAdbPath(sdkRoot);
+    const chosen = await pickDeviceTarget(adbPath);
+    if (!chosen) {
+        return;
+    }
+    if (chosen.kind === "simulator") {
+        const spec = getSimulatorProfile(chosen.profile);
+        const alreadyRunning = simulatorProcessManager?.runningInfo(
+            chosen.profile,
+        );
+        if (alreadyRunning) {
+            vscode.window.showInformationMessage(
+                `Compose Preview: target set to ${spec.displayName} (${alreadyRunning.serial}).`,
+            );
+            return;
+        }
+        const choice = await vscode.window.showInformationMessage(
+            `Compose Preview: target set to ${spec.displayName} (starts automatically on launch).`,
+            "Start Now",
+        );
+        if (choice === "Start Now") {
+            await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: `Starting ${spec.displayName}…`,
+                    cancellable: false,
+                },
+                async (progress) => {
+                    const serial = await startSelectedSimulator(
+                        chosen.profile,
+                        progress,
+                    );
+                    if (serial) {
+                        vscode.window.showInformationMessage(
+                            `${spec.displayName} is ready on ${serial}.`,
+                        );
+                    }
+                },
+            );
+        }
+    } else {
+        vscode.window.showInformationMessage(
+            `Compose Preview: target set to ${chosen.label} (${chosen.serial}).`,
+        );
+    }
+}
+
+async function stopSimulatorsCommand(): Promise<void> {
+    if (!simulatorProcessManager) {
+        return;
+    }
+    await simulatorProcessManager.stopAll();
+    updateDeviceStatusItem();
+    vscode.window.showInformationMessage(
+        "Compose Preview: stopped running Compose Preview Simulators.",
+    );
+}
+
+async function resolveLaunchDeviceSerial(
+    adbPath: string,
+    progress: vscode.Progress<{ message?: string }>,
+): Promise<string | null | undefined> {
+    // undefined => user cancelled picker; null => let adb pick default; string => explicit serial
+    let target = selectedDeviceTarget;
+    if (target?.kind === "adb") {
+        const adbSerial = target.serial;
+        const online = await queryAdbDevices(adbPath);
+        if (
+            !online.some((d) => d.serial === adbSerial && d.state === "device")
+        ) {
+            target = null;
+        }
+    }
+    if (!target) {
+        const picked = await pickDeviceTarget(adbPath);
+        if (!picked) {
+            return undefined;
+        }
+        target = picked;
+    }
+    if (target.kind === "simulator") {
+        const serial = await startSelectedSimulator(target.profile, progress);
+        return serial ?? undefined;
+    }
+    return target.serial;
+}
+
 async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
     if (!gradleService) {
         vscode.window.showInformationMessage(
@@ -7083,6 +7340,8 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
     }
     const { module, applicationId, info } = preview;
     const composableFqn = `${info.className}.${info.functionName}`;
+    const sdkRoot = findAndroidSdkRoot(gradleService.workspaceRoot);
+    const adbPath = resolveAdbPath(sdkRoot);
     logLine(
         `launchOnDevice: ${module.modulePath} (${applicationId}) → ${composableFqn}`,
     );
@@ -7094,6 +7353,10 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
             cancellable: false,
         },
         async (progress) => {
+            const serial = await resolveLaunchDeviceSerial(adbPath, progress);
+            if (serial === undefined) {
+                return;
+            }
             progress.report({
                 message: "Building & installing (installDebug)…",
             });
@@ -7111,13 +7374,12 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
             }
 
             progress.report({ message: "Starting PreviewActivity (adb)…" });
-            const sdkRoot = findAndroidSdkRoot(gradleService!.workspaceRoot);
-            const adbPath = resolveAdbPath(sdkRoot);
             const args = buildPreviewActivityAmStartArgs({
                 applicationId,
                 composableFqn,
                 parameterProviderClassName:
                     info.params.previewParameterProviderClassName ?? null,
+                serial,
             });
             try {
                 const result = await runAdb(adbPath, args);
@@ -7149,7 +7411,7 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
                 return;
             }
             vscode.window.showInformationMessage(
-                `Compose Preview: launched ${info.functionName} on device.`,
+                `Compose Preview: launched ${info.functionName}${serial ? ` on ${serial}` : " on device"}.`,
             );
         },
     );

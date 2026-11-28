@@ -178,6 +178,18 @@
                 "enablement": "config.composePreview.earlyFeatures.enabled"
             },
             {
+                "command": "composePreview.selectDevice",
+                "title": "Select Android Device / Simulator…",
+                "category": "Compose Preview",
+                "icon": "$(vm)"
+            },
+            {
+                "command": "composePreview.stopSimulators",
+                "title": "Stop Compose Preview Simulators",
+                "category": "Compose Preview",
+                "icon": "$(debug-stop)"
+            },
+            {
                 "command": "composePreview.openBundle",
                 "title": "Open Preview Bundle…",
                 "category": "Compose Preview",

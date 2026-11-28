@@ -182,9 +182,14 @@ export function buildPreviewActivityAmStartArgs(opts: {
     applicationId: string;
     composableFqn: string;
     parameterProviderClassName: string | null;
+    serial?: string | null;
 }): string[] {
     const component = `${opts.applicationId}/androidx.compose.ui.tooling.PreviewActivity`;
-    const args = [
+    const args: string[] = [];
+    if (opts.serial && opts.serial.trim().length > 0) {
+        args.push("-s", opts.serial.trim());
+    }
+    args.push(
         "shell",
         "am",
         "start",
@@ -193,7 +198,7 @@ export function buildPreviewActivityAmStartArgs(opts: {
         "--es",
         "composable",
         opts.composableFqn,
-    ];
+    );
     if (opts.parameterProviderClassName) {
         args.push(
             "--es",

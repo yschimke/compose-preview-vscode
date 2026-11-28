@@ -151,6 +151,8 @@ related information.
 | `Compose Preview: Browse Google Fonts`                    | Open the Google Fonts browser: search, download, and live-customise fonts.                                   |
 | `Compose Preview: Check Design Guidelines`                | Check the active file's previews against the catalog's design guidelines; findings go to the Problems panel. |
 | `Compose Preview: Set OpenRouter Key (Design Guidelines)` | Store the OpenRouter key the design-guidelines check uses, in the OS keychain.                               |
+| `Compose Preview: Select Android Device / Simulator…`     | Pick a connected ADB device or an on-demand Compose Preview Simulator (Phone / Wear) for launching previews. |
+| `Compose Preview: Stop Compose Preview Simulators`        | Stop any running `compose-preview android-simulator --adb` processes started by this extension.              |
 
 ### Settings
 
