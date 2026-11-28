@@ -227,6 +227,118 @@ export function buildAdbInstallArgs(opts: {
     return args;
 }
 
+const DYNAMIC_FEATURES_RE = /\bdynamicFeatures\b/;
+
+/**
+ * Return true when a module's Gradle build script declares Android dynamic
+ * feature modules (`dynamicFeatures`). AGP installs such applications through
+ * bundle splits (`BundleInstallVariantTask`) rather than a single base APK.
+ */
+export function hasDynamicFeatures(buildGradleContent: string): boolean {
+    let inBlockComment = false;
+    for (const rawLine of buildGradleContent.split(/\r?\n/)) {
+        let line = rawLine;
+        while (inBlockComment) {
+            const endIdx = line.indexOf("*/");
+            if (endIdx === -1) {
+                line = "";
+                break;
+            }
+            line = line.slice(endIdx + 2);
+            inBlockComment = false;
+        }
+        // Strip single-line `/* ... */` blocks and `// ...` comments.
+        line = line.replace(/\/\*[\s\S]*?\*\//g, "");
+        const blockStart = line.indexOf("/*");
+        if (blockStart !== -1) {
+            line = line.slice(0, blockStart);
+            inBlockComment = true;
+        }
+        const lineComment = line.indexOf("//");
+        if (lineComment !== -1) {
+            line = line.slice(0, lineComment);
+        }
+        if (DYNAMIC_FEATURES_RE.test(line)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Inspect `<moduleAbsDir>/build.gradle.kts` (or `build.gradle`) to check
+ * whether the Android application declares `dynamicFeatures`.
+ */
+export function moduleHasDynamicFeatures(moduleAbsDir: string): boolean {
+    for (const filename of ["build.gradle.kts", "build.gradle"]) {
+        const buildFile = path.join(moduleAbsDir, filename);
+        try {
+            const content = fs.readFileSync(buildFile, "utf-8");
+            if (hasDynamicFeatures(content)) {
+                return true;
+            }
+        } catch {
+            /* try next candidate */
+        }
+    }
+    return false;
+}
+
+/**
+ * Resolve the workspace's Gradle wrapper (`gradlew` / `gradlew.bat`), falling
+ * back to bare `gradle` on `PATH` if no wrapper exists at [workspaceRoot].
+ */
+export function resolveGradlewPath(workspaceRoot: string): string {
+    const wrapperName =
+        process.platform === "win32" ? "gradlew.bat" : "gradlew";
+    const candidate = path.join(workspaceRoot, wrapperName);
+    return fs.existsSync(candidate) ? candidate : "gradle";
+}
+
+/**
+ * Run `:<module>:installDebug` via the workspace Gradle wrapper with
+ * `ANDROID_SERIAL` set to [serial]. Used for dynamic-feature apps so AGP's
+ * bundle-based installer deploys all required feature splits while targeting
+ * only the selected device serial.
+ */
+export function runGradleInstallDebugForSerial(opts: {
+    workspaceRoot: string;
+    modulePath: string;
+    serial: string;
+    sdkRoot?: string | null;
+}): Promise<AdbResult> {
+    const gradlew = resolveGradlewPath(opts.workspaceRoot);
+    const env: NodeJS.ProcessEnv = {
+        ...process.env,
+        ANDROID_SERIAL: opts.serial.trim(),
+    };
+    if (opts.sdkRoot) {
+        env.ANDROID_HOME = opts.sdkRoot;
+        env.ANDROID_SDK_ROOT = opts.sdkRoot;
+    }
+    const taskName = `${opts.modulePath}:installDebug`;
+    return new Promise((resolve, reject) => {
+        const proc = spawn(gradlew, [taskName], {
+            cwd: opts.workspaceRoot,
+            env,
+            stdio: ["ignore", "pipe", "pipe"],
+            shell: process.platform === "win32",
+        });
+        let stdout = "";
+        let stderr = "";
+        proc.stdout.on("data", (chunk) => {
+            stdout += chunk.toString();
+        });
+        proc.stderr.on("data", (chunk) => {
+            stderr += chunk.toString();
+        });
+        proc.on("error", reject);
+        proc.on("close", (code) => {
+            resolve({ code: code ?? -1, stdout, stderr });
+        });
+    });
+}
+
 interface OutputMetadataFilter {
     filterType?: string;
     value?: string;
