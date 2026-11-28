@@ -4,6 +4,7 @@ import * as os from "os";
 import * as path from "path";
 import {
     buildAdbInstallArgs,
+    buildGradleSpawnSpec,
     buildPreviewActivityAmStartArgs,
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
@@ -502,6 +503,37 @@ describe("resolveGradlewPath / runGradleInstallDebugForSerial", () => {
             );
         }),
     );
+
+    it("quotes Windows gradlew.bat paths containing spaces via cmd.exe /d /s /c", () => {
+        const spec = buildGradleSpawnSpec(
+            "C:\\Users\\Jane Doe\\project\\gradlew.bat",
+            ":app:installDebug",
+            "win32",
+            "C:\\Windows\\System32\\cmd.exe",
+        );
+        assert.deepStrictEqual(spec, {
+            command: "C:\\Windows\\System32\\cmd.exe",
+            args: [
+                "/d",
+                "/s",
+                "/c",
+                '""C:\\Users\\Jane Doe\\project\\gradlew.bat" ":app:installDebug""',
+            ],
+            windowsVerbatimArguments: true,
+        });
+    });
+
+    it("invokes gradlew directly on POSIX platforms", () => {
+        const spec = buildGradleSpawnSpec(
+            "/home/user/my project/gradlew",
+            ":app:installDebug",
+            "linux",
+        );
+        assert.deepStrictEqual(spec, {
+            command: "/home/user/my project/gradlew",
+            args: [":app:installDebug"],
+        });
+    });
 });
 
 describe("collectAndroidApplicationModules", () => {

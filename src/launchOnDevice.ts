@@ -295,6 +295,37 @@ export function resolveGradlewPath(workspaceRoot: string): string {
     return fs.existsSync(candidate) ? candidate : "gradle";
 }
 
+export interface GradleSpawnSpec {
+    command: string;
+    args: string[];
+    windowsVerbatimArguments?: boolean;
+}
+
+/**
+ * Build the `child_process.spawn` command/args for invoking `gradlew` across
+ * platforms. On Windows, `.bat` files require `cmd.exe`, and `spawn` with
+ * `shell: true` does not quote spaces in the executable path — invoke
+ * `cmd.exe /d /s /c` with `windowsVerbatimArguments: true` and explicit quotes
+ * around the wrapper path and task name instead.
+ */
+export function buildGradleSpawnSpec(
+    gradlewPath: string,
+    taskName: string,
+    platform: NodeJS.Platform = process.platform,
+    comSpec: string = process.env.ComSpec || "cmd.exe",
+): GradleSpawnSpec {
+    if (platform === "win32") {
+        const quotedExe = `"${gradlewPath.replace(/"/g, '""')}"`;
+        const quotedTask = `"${taskName.replace(/"/g, '""')}"`;
+        return {
+            command: comSpec,
+            args: ["/d", "/s", "/c", `"${quotedExe} ${quotedTask}"`],
+            windowsVerbatimArguments: true,
+        };
+    }
+    return { command: gradlewPath, args: [taskName] };
+}
+
 /**
  * Run `:<module>:installDebug` via the workspace Gradle wrapper with
  * `ANDROID_SERIAL` set to [serial]. Used for dynamic-feature apps so AGP's
@@ -326,12 +357,13 @@ export function runGradleInstallDebugForSerial(opts: {
             : javaBin;
     }
     const taskName = `${opts.modulePath}:installDebug`;
+    const spec = buildGradleSpawnSpec(gradlew, taskName);
     return new Promise((resolve, reject) => {
-        const proc = spawn(gradlew, [taskName], {
+        const proc = spawn(spec.command, spec.args, {
             cwd: opts.workspaceRoot,
             env,
             stdio: ["ignore", "pipe", "pipe"],
-            shell: process.platform === "win32",
+            windowsVerbatimArguments: spec.windowsVerbatimArguments,
         });
         let stdout = "";
         let stderr = "";
