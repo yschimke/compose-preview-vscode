@@ -3,9 +3,12 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import {
+    buildAdbInstallArgs,
     buildPreviewActivityAmStartArgs,
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
+    findDebugApk,
+    parseAdbAbis,
     parseAndroidApplicationInfo,
     resolveAdbPath,
 } from "../launchOnDevice";
@@ -240,6 +243,195 @@ describe("buildPreviewActivityAmStartArgs", () => {
             "composable",
             "com.example.PreviewsKt.MyPreview",
         ]);
+    });
+});
+
+describe("buildAdbInstallArgs", () => {
+    it("omits -s when no serial is provided", () => {
+        assert.deepStrictEqual(
+            buildAdbInstallArgs({ apkPath: "/tmp/app-debug.apk" }),
+            ["install", "-r", "-t", "/tmp/app-debug.apk"],
+        );
+    });
+
+    it("targets the selected serial with -s", () => {
+        assert.deepStrictEqual(
+            buildAdbInstallArgs({
+                apkPath: "/tmp/app-debug.apk",
+                serial: "127.0.0.1:5555",
+            }),
+            [
+                "-s",
+                "127.0.0.1:5555",
+                "install",
+                "-r",
+                "-t",
+                "/tmp/app-debug.apk",
+            ],
+        );
+    });
+});
+
+describe("findDebugApk", () => {
+    it(
+        "resolves outputFile from build/outputs/apk/debug/output-metadata.json",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const apkPath = path.join(debugDir, "app-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [{ type: "SINGLE", outputFile: "app-debug.apk" }],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "falls back to scanning *.apk when output-metadata.json is absent",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const apkPath = path.join(debugDir, "sample-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "sample-debug-androidTest.apk"),
+                "test-apk",
+            );
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "finds debug APK under flavor subdirectory",
+        withTempDir((dir) => {
+            const flavorDebugDir = path.join(
+                dir,
+                "build",
+                "outputs",
+                "apk",
+                "free",
+                "debug",
+            );
+            fs.mkdirSync(flavorDebugDir, { recursive: true });
+            const apkPath = path.join(flavorDebugDir, "app-free-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "rejects path traversal in output-metadata.json",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const outsideApk = path.join(dir, "outside.apk");
+            fs.writeFileSync(outsideApk, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [
+                        {
+                            type: "SINGLE",
+                            outputFile: "../../../../outside.apk",
+                        },
+                    ],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir), null);
+        }),
+    );
+
+    it(
+        "selects the ABI-split APK matching the target device architecture",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const armApk = path.join(debugDir, "app-arm64-v8a-debug.apk");
+            const x86Apk = path.join(debugDir, "app-x86_64-debug.apk");
+            fs.writeFileSync(armApk, "arm");
+            fs.writeFileSync(x86Apk, "x86");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [
+                        {
+                            type: "ONE_OF_MANY",
+                            filters: [
+                                { filterType: "ABI", value: "arm64-v8a" },
+                            ],
+                            outputFile: "app-arm64-v8a-debug.apk",
+                        },
+                        {
+                            type: "ONE_OF_MANY",
+                            filters: [{ filterType: "ABI", value: "x86_64" }],
+                            outputFile: "app-x86_64-debug.apk",
+                        },
+                    ],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir, ["x86_64", "x86"]), x86Apk);
+            assert.strictEqual(
+                findDebugApk(dir, ["arm64-v8a", "armeabi-v7a"]),
+                armApk,
+            );
+            assert.strictEqual(findDebugApk(dir, ["armeabi-v7a"]), null);
+        }),
+    );
+
+    it(
+        "falls back to UNIVERSAL APK when no ABI-split matches preferredAbis",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const armApk = path.join(debugDir, "app-arm64-v8a-debug.apk");
+            const universalApk = path.join(debugDir, "app-universal-debug.apk");
+            fs.writeFileSync(armApk, "arm");
+            fs.writeFileSync(universalApk, "universal");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [
+                        {
+                            type: "ONE_OF_MANY",
+                            filters: [
+                                { filterType: "ABI", value: "arm64-v8a" },
+                            ],
+                            outputFile: "app-arm64-v8a-debug.apk",
+                        },
+                        {
+                            type: "UNIVERSAL",
+                            filters: [],
+                            outputFile: "app-universal-debug.apk",
+                        },
+                    ],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir, ["x86_64"]), universalApk);
+        }),
+    );
+
+    it(
+        "returns null when no debug APK exists",
+        withTempDir((dir) => {
+            assert.strictEqual(findDebugApk(dir), null);
+        }),
+    );
+});
+
+describe("parseAdbAbis", () => {
+    it("splits comma-separated ABI lists and deduplicates", () => {
+        assert.deepStrictEqual(
+            parseAdbAbis("x86_64,arm64-v8a,armeabi-v7a,x86_64\r\n"),
+            ["x86_64", "arm64-v8a", "armeabi-v7a"],
+        );
+    });
+
+    it("returns empty array for blank output", () => {
+        assert.deepStrictEqual(parseAdbAbis("  \n"), []);
     });
 });
 
