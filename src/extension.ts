@@ -133,9 +133,11 @@ import {
     DiagnosticLike,
 } from "./compileErrors";
 import {
+    buildAdbInstallArgs,
     buildPreviewActivityAmStartArgs,
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
+    findDebugApk,
     resolveAdbPath,
     runAdb,
 } from "./launchOnDevice";
@@ -7357,20 +7359,77 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
             if (serial === undefined) {
                 return;
             }
-            progress.report({
-                message: "Building & installing (installDebug)…",
-            });
-            try {
-                await gradleService!.installDebug(module);
-            } catch (e: unknown) {
-                if (e instanceof TaskCancelledError) {
+            if (serial) {
+                progress.report({
+                    message: "Building debug APK (assembleDebug)…",
+                });
+                try {
+                    await gradleService!.assembleDebug(module);
+                } catch (e: unknown) {
+                    if (e instanceof TaskCancelledError) {
+                        return;
+                    }
+                    const m = e instanceof Error ? e.message : String(e);
+                    vscode.window.showErrorMessage(
+                        `Compose Preview: assembleDebug failed — ${m}`,
+                    );
                     return;
                 }
-                const m = e instanceof Error ? e.message : String(e);
-                vscode.window.showErrorMessage(
-                    `Compose Preview: installDebug failed — ${m}`,
+                const moduleAbsDir = path.join(
+                    gradleService!.workspaceRoot,
+                    module.projectDir,
                 );
-                return;
+                const apkPath = findDebugApk(moduleAbsDir);
+                if (!apkPath) {
+                    vscode.window.showErrorMessage(
+                        `Compose Preview: could not find built debug APK under ${module.projectDir}/build/outputs/apk to install on ${serial}.`,
+                    );
+                    return;
+                }
+                progress.report({
+                    message: `Installing APK on ${serial} (adb)…`,
+                });
+                try {
+                    const installResult = await runAdb(
+                        adbPath,
+                        buildAdbInstallArgs({ apkPath, serial }),
+                    );
+                    if (installResult.code !== 0) {
+                        const detail = (
+                            installResult.stderr ||
+                            installResult.stdout ||
+                            ""
+                        ).trim();
+                        vscode.window.showErrorMessage(
+                            `Compose Preview: adb install failed on ${serial}` +
+                                (detail ? ` — ${detail}` : ""),
+                        );
+                        return;
+                    }
+                } catch (e: unknown) {
+                    const m = e instanceof Error ? e.message : String(e);
+                    vscode.window.showErrorMessage(
+                        `Compose Preview: could not run adb (${adbPath}) — ${m}. ` +
+                            "Set ANDROID_HOME or sdk.dir in local.properties.",
+                    );
+                    return;
+                }
+            } else {
+                progress.report({
+                    message: "Building & installing (installDebug)…",
+                });
+                try {
+                    await gradleService!.installDebug(module);
+                } catch (e: unknown) {
+                    if (e instanceof TaskCancelledError) {
+                        return;
+                    }
+                    const m = e instanceof Error ? e.message : String(e);
+                    vscode.window.showErrorMessage(
+                        `Compose Preview: installDebug failed — ${m}`,
+                    );
+                    return;
+                }
             }
 
             progress.report({ message: "Starting PreviewActivity (adb)…" });

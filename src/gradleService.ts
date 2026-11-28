@@ -737,6 +737,16 @@ export class GradleService {
     }
 
     /**
+     * Runs `:<module>:assembleDebug` to build the consumer's debug APK
+     * without installing it across every connected ADB device. Used when
+     * the user selected an explicit device serial so we can follow with
+     * `adb -s <serial> install -r -t <apk>`.
+     */
+    async assembleDebug(module: ModuleInfo, opts?: TaskOptions): Promise<void> {
+        await this.runTask(`${module.modulePath}:assembleDebug`, [], opts);
+    }
+
+    /**
      * Runs `:<module>:composePreviewRender` then `:<module>:composePreviewBundle`
      * with `-PbundlePreviewIds=<encoded id>` and `-PbundleOutput=<outputPath>`.
      * The render step keeps the bundle's cover PNG fresh; the bundle step

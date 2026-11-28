@@ -210,4 +210,16 @@ describe("Compose Preview lifecycle", () => {
             "after a full render the stale list should be empty",
         );
     });
+
+    it("registers the device picker and simulator stop commands on activation", async () => {
+        const commands = await vscode.commands.getCommands(true);
+        assert.ok(
+            commands.includes("composePreview.selectDevice"),
+            "composePreview.selectDevice must be registered",
+        );
+        assert.ok(
+            commands.includes("composePreview.stopSimulators"),
+            "composePreview.stopSimulators must be registered",
+        );
+    });
 });

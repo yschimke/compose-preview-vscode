@@ -210,6 +210,137 @@ export function buildPreviewActivityAmStartArgs(opts: {
 }
 
 /**
+ * Build the `adb install` argv for deploying a built APK to a specific
+ * device serial (or default device when omitted). Uses `-r` (replace
+ * existing app) and `-t` (allow test-only APKs, matching AGP's
+ * `InstallVariantTask` flags).
+ */
+export function buildAdbInstallArgs(opts: {
+    apkPath: string;
+    serial?: string | null;
+}): string[] {
+    const args: string[] = [];
+    if (opts.serial && opts.serial.trim().length > 0) {
+        args.push("-s", opts.serial.trim());
+    }
+    args.push("install", "-r", "-t", opts.apkPath);
+    return args;
+}
+
+interface OutputMetadataElement {
+    type?: string;
+    outputFile?: string;
+}
+
+interface OutputMetadata {
+    elements?: OutputMetadataElement[];
+}
+
+function readDebugApkFromDir(dir: string): string | null {
+    const metadataPath = path.join(dir, "output-metadata.json");
+    if (fs.existsSync(metadataPath)) {
+        try {
+            const parsed = JSON.parse(
+                fs.readFileSync(metadataPath, "utf-8"),
+            ) as OutputMetadata;
+            const elements = Array.isArray(parsed.elements)
+                ? parsed.elements
+                : [];
+            const ordered = [
+                ...elements.filter(
+                    (e) => e.type === "SINGLE" || e.type === "UNIVERSAL",
+                ),
+                ...elements.filter(
+                    (e) => e.type !== "SINGLE" && e.type !== "UNIVERSAL",
+                ),
+            ];
+            const resolvedDir = path.resolve(dir);
+            for (const element of ordered) {
+                if (typeof element.outputFile !== "string") {
+                    continue;
+                }
+                const candidate = path.resolve(dir, element.outputFile);
+                if (
+                    (candidate === resolvedDir ||
+                        candidate.startsWith(resolvedDir + path.sep)) &&
+                    fs.existsSync(candidate) &&
+                    fs.statSync(candidate).isFile()
+                ) {
+                    return candidate;
+                }
+            }
+        } catch {
+            /* fall through to directory scan */
+        }
+    }
+
+    let entries: fs.Dirent[];
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+        return null;
+    }
+    const apks = entries
+        .filter(
+            (e) =>
+                e.isFile() &&
+                e.name.endsWith(".apk") &&
+                !e.name.includes("androidTest"),
+        )
+        .map((e) => {
+            const fullPath = path.join(dir, e.name);
+            return {
+                fullPath,
+                mtimeMs: fs.statSync(fullPath).mtimeMs,
+            };
+        })
+        .sort((a, b) => b.mtimeMs - a.mtimeMs);
+    return apks.length > 0 ? apks[0].fullPath : null;
+}
+
+/**
+ * Locate the built debug APK under a module directory after running
+ * `:<module>:assembleDebug`. Checks standard `build/outputs/apk/debug/`
+ * first (reading AGP's `output-metadata.json` when present), then scans
+ * flavor subdirectories (`build/outputs/apk/<flavor>/debug/`).
+ */
+export function findDebugApk(moduleAbsDir: string): string | null {
+    const apkRoot = path.join(moduleAbsDir, "build", "outputs", "apk");
+    const directDebugDir = path.join(apkRoot, "debug");
+    const direct = readDebugApkFromDir(directDebugDir);
+    if (direct) {
+        return direct;
+    }
+
+    let entries: fs.Dirent[];
+    try {
+        entries = fs.readdirSync(apkRoot, { withFileTypes: true });
+    } catch {
+        return null;
+    }
+    const candidates: Array<{ fullPath: string; mtimeMs: number }> = [];
+    for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name === "debug") {
+            continue;
+        }
+        const flavorDebug = path.join(apkRoot, entry.name, "debug");
+        const found = readDebugApkFromDir(flavorDebug);
+        if (found) {
+            try {
+                candidates.push({
+                    fullPath: found,
+                    mtimeMs: fs.statSync(found).mtimeMs,
+                });
+            } catch {
+                /* skip disappeared file */
+            }
+        }
+    }
+    candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    return candidates.length > 0 ? candidates[0].fullPath : null;
+}
+
+/**
  * Filter [modules] to those whose `build.gradle.kts` applies the
  * Android-application plugin and declares an `applicationId`. Returns a
  * sorted list of `{module, applicationId}` pairs. Modules that can't be

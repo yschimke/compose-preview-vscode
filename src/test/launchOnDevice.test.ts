@@ -3,9 +3,11 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import {
+    buildAdbInstallArgs,
     buildPreviewActivityAmStartArgs,
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
+    findDebugApk,
     parseAndroidApplicationInfo,
     resolveAdbPath,
 } from "../launchOnDevice";
@@ -241,6 +243,113 @@ describe("buildPreviewActivityAmStartArgs", () => {
             "com.example.PreviewsKt.MyPreview",
         ]);
     });
+});
+
+describe("buildAdbInstallArgs", () => {
+    it("omits -s when no serial is provided", () => {
+        assert.deepStrictEqual(
+            buildAdbInstallArgs({ apkPath: "/tmp/app-debug.apk" }),
+            ["install", "-r", "-t", "/tmp/app-debug.apk"],
+        );
+    });
+
+    it("targets the selected serial with -s", () => {
+        assert.deepStrictEqual(
+            buildAdbInstallArgs({
+                apkPath: "/tmp/app-debug.apk",
+                serial: "127.0.0.1:5555",
+            }),
+            [
+                "-s",
+                "127.0.0.1:5555",
+                "install",
+                "-r",
+                "-t",
+                "/tmp/app-debug.apk",
+            ],
+        );
+    });
+});
+
+describe("findDebugApk", () => {
+    it(
+        "resolves outputFile from build/outputs/apk/debug/output-metadata.json",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const apkPath = path.join(debugDir, "app-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [{ type: "SINGLE", outputFile: "app-debug.apk" }],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "falls back to scanning *.apk when output-metadata.json is absent",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const apkPath = path.join(debugDir, "sample-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "sample-debug-androidTest.apk"),
+                "test-apk",
+            );
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "finds debug APK under flavor subdirectory",
+        withTempDir((dir) => {
+            const flavorDebugDir = path.join(
+                dir,
+                "build",
+                "outputs",
+                "apk",
+                "free",
+                "debug",
+            );
+            fs.mkdirSync(flavorDebugDir, { recursive: true });
+            const apkPath = path.join(flavorDebugDir, "app-free-debug.apk");
+            fs.writeFileSync(apkPath, "apk");
+            assert.strictEqual(findDebugApk(dir), apkPath);
+        }),
+    );
+
+    it(
+        "rejects path traversal in output-metadata.json",
+        withTempDir((dir) => {
+            const debugDir = path.join(dir, "build", "outputs", "apk", "debug");
+            fs.mkdirSync(debugDir, { recursive: true });
+            const outsideApk = path.join(dir, "outside.apk");
+            fs.writeFileSync(outsideApk, "apk");
+            fs.writeFileSync(
+                path.join(debugDir, "output-metadata.json"),
+                JSON.stringify({
+                    elements: [
+                        {
+                            type: "SINGLE",
+                            outputFile: "../../../../outside.apk",
+                        },
+                    ],
+                }),
+            );
+            assert.strictEqual(findDebugApk(dir), null);
+        }),
+    );
+
+    it(
+        "returns null when no debug APK exists",
+        withTempDir((dir) => {
+            assert.strictEqual(findDebugApk(dir), null);
+        }),
+    );
 });
 
 describe("collectAndroidApplicationModules", () => {
