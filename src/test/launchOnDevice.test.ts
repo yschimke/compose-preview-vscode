@@ -220,6 +220,27 @@ describe("buildPreviewActivityAmStartArgs", () => {
             "com.example.PreviewsKt$ToggleProvider",
         ]);
     });
+
+    it("prepends -s <serial> when a target device serial is provided", () => {
+        const args = buildPreviewActivityAmStartArgs({
+            applicationId: "com.example.app",
+            composableFqn: "com.example.PreviewsKt.MyPreview",
+            parameterProviderClassName: null,
+            serial: "emulator-5554",
+        });
+        assert.deepStrictEqual(args, [
+            "-s",
+            "emulator-5554",
+            "shell",
+            "am",
+            "start",
+            "-n",
+            "com.example.app/androidx.compose.ui.tooling.PreviewActivity",
+            "--es",
+            "composable",
+            "com.example.PreviewsKt.MyPreview",
+        ]);
+    });
 });
 
 describe("collectAndroidApplicationModules", () => {
