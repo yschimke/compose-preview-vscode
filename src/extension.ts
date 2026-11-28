@@ -138,9 +138,11 @@ import {
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
     findDebugApk,
+    moduleHasDynamicFeatures,
     queryDeviceAbis,
     resolveAdbPath,
     runAdb,
+    runGradleInstallDebugForSerial,
 } from "./launchOnDevice";
 import { BundleCliNotFoundError, locateBundleCli } from "./bundleRender";
 import {
@@ -7361,64 +7363,103 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
                 return;
             }
             if (serial) {
-                progress.report({
-                    message: "Building debug APK (assembleDebug)…",
-                });
-                try {
-                    await gradleService!.assembleDebug(module);
-                } catch (e: unknown) {
-                    if (e instanceof TaskCancelledError) {
-                        return;
-                    }
-                    const m = e instanceof Error ? e.message : String(e);
-                    vscode.window.showErrorMessage(
-                        `Compose Preview: assembleDebug failed — ${m}`,
-                    );
-                    return;
-                }
                 const moduleAbsDir = path.join(
                     gradleService!.workspaceRoot,
                     module.projectDir,
                 );
-                const deviceAbis = await queryDeviceAbis(adbPath, serial);
-                const apkPath = findDebugApk(moduleAbsDir, deviceAbis);
-                if (!apkPath) {
-                    const abiNote =
-                        deviceAbis.length > 0
-                            ? ` matching ${deviceAbis.join(", ")}`
-                            : "";
-                    vscode.window.showErrorMessage(
-                        `Compose Preview: could not find built debug APK${abiNote} under ${module.projectDir}/build/outputs/apk to install on ${serial}.`,
-                    );
-                    return;
-                }
-                progress.report({
-                    message: `Installing APK on ${serial} (adb)…`,
-                });
-                try {
-                    const installResult = await runAdb(
-                        adbPath,
-                        buildAdbInstallArgs({ apkPath, serial }),
-                    );
-                    if (installResult.code !== 0) {
-                        const detail = (
-                            installResult.stderr ||
-                            installResult.stdout ||
-                            ""
-                        ).trim();
+                if (moduleHasDynamicFeatures(moduleAbsDir)) {
+                    progress.report({
+                        message: `Building & installing splits on ${serial} (installDebug)…`,
+                    });
+                    try {
+                        const gradleJavaHome =
+                            vscode.workspace
+                                .getConfiguration()
+                                .get<string>("java.import.gradle.java.home")
+                                ?.trim() || undefined;
+                        const installResult =
+                            await runGradleInstallDebugForSerial({
+                                workspaceRoot: gradleService!.workspaceRoot,
+                                modulePath: module.modulePath,
+                                serial,
+                                sdkRoot,
+                                javaHome: gradleJavaHome,
+                            });
+                        if (installResult.code !== 0) {
+                            const detail = (
+                                installResult.stderr ||
+                                installResult.stdout ||
+                                ""
+                            ).trim();
+                            vscode.window.showErrorMessage(
+                                `Compose Preview: installDebug failed on ${serial}` +
+                                    (detail ? ` — ${detail}` : ""),
+                            );
+                            return;
+                        }
+                    } catch (e: unknown) {
+                        const m = e instanceof Error ? e.message : String(e);
                         vscode.window.showErrorMessage(
-                            `Compose Preview: adb install failed on ${serial}` +
-                                (detail ? ` — ${detail}` : ""),
+                            `Compose Preview: installDebug failed on ${serial} — ${m}`,
                         );
                         return;
                     }
-                } catch (e: unknown) {
-                    const m = e instanceof Error ? e.message : String(e);
-                    vscode.window.showErrorMessage(
-                        `Compose Preview: could not run adb (${adbPath}) — ${m}. ` +
-                            "Set ANDROID_HOME or sdk.dir in local.properties.",
-                    );
-                    return;
+                } else {
+                    progress.report({
+                        message: "Building debug APK (assembleDebug)…",
+                    });
+                    try {
+                        await gradleService!.assembleDebug(module);
+                    } catch (e: unknown) {
+                        if (e instanceof TaskCancelledError) {
+                            return;
+                        }
+                        const m = e instanceof Error ? e.message : String(e);
+                        vscode.window.showErrorMessage(
+                            `Compose Preview: assembleDebug failed — ${m}`,
+                        );
+                        return;
+                    }
+                    const deviceAbis = await queryDeviceAbis(adbPath, serial);
+                    const apkPath = findDebugApk(moduleAbsDir, deviceAbis);
+                    if (!apkPath) {
+                        const abiNote =
+                            deviceAbis.length > 0
+                                ? ` matching ${deviceAbis.join(", ")}`
+                                : "";
+                        vscode.window.showErrorMessage(
+                            `Compose Preview: could not find built debug APK${abiNote} under ${module.projectDir}/build/outputs/apk to install on ${serial}.`,
+                        );
+                        return;
+                    }
+                    progress.report({
+                        message: `Installing APK on ${serial} (adb)…`,
+                    });
+                    try {
+                        const installResult = await runAdb(
+                            adbPath,
+                            buildAdbInstallArgs({ apkPath, serial }),
+                        );
+                        if (installResult.code !== 0) {
+                            const detail = (
+                                installResult.stderr ||
+                                installResult.stdout ||
+                                ""
+                            ).trim();
+                            vscode.window.showErrorMessage(
+                                `Compose Preview: adb install failed on ${serial}` +
+                                    (detail ? ` — ${detail}` : ""),
+                            );
+                            return;
+                        }
+                    } catch (e: unknown) {
+                        const m = e instanceof Error ? e.message : String(e);
+                        vscode.window.showErrorMessage(
+                            `Compose Preview: could not run adb (${adbPath}) — ${m}. ` +
+                                "Set ANDROID_HOME or sdk.dir in local.properties.",
+                        );
+                        return;
+                    }
                 }
             } else {
                 progress.report({

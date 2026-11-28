@@ -4,13 +4,18 @@ import * as os from "os";
 import * as path from "path";
 import {
     buildAdbInstallArgs,
+    buildGradleSpawnSpec,
     buildPreviewActivityAmStartArgs,
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
     findDebugApk,
+    hasDynamicFeatures,
+    moduleHasDynamicFeatures,
     parseAdbAbis,
     parseAndroidApplicationInfo,
     resolveAdbPath,
+    resolveGradlewPath,
+    runGradleInstallDebugForSerial,
 } from "../launchOnDevice";
 
 function withTempDir(
@@ -432,6 +437,102 @@ describe("parseAdbAbis", () => {
 
     it("returns empty array for blank output", () => {
         assert.deepStrictEqual(parseAdbAbis("  \n"), []);
+    });
+});
+
+describe("hasDynamicFeatures / moduleHasDynamicFeatures", () => {
+    it("detects dynamicFeatures declarations in Kotlin and Groovy build scripts", () => {
+        assert.strictEqual(
+            hasDynamicFeatures(
+                'android { dynamicFeatures += setOf(":feature:video") }',
+            ),
+            true,
+        );
+        assert.strictEqual(
+            hasDynamicFeatures('android { dynamicFeatures = [":feature"] }'),
+            true,
+        );
+        assert.strictEqual(
+            hasDynamicFeatures(
+                '// android { dynamicFeatures += setOf(":feature") }\n/* dynamicFeatures = [] */',
+            ),
+            false,
+        );
+        assert.strictEqual(
+            hasDynamicFeatures('android { namespace = "com.example.app" }'),
+            false,
+        );
+    });
+
+    it(
+        "inspects build.gradle.kts in module directory",
+        withTempDir((dir) => {
+            fs.writeFileSync(
+                path.join(dir, "build.gradle.kts"),
+                'android { dynamicFeatures += setOf(":feat") }\n',
+            );
+            assert.strictEqual(moduleHasDynamicFeatures(dir), true);
+        }),
+    );
+});
+
+describe("resolveGradlewPath / runGradleInstallDebugForSerial", () => {
+    it(
+        "resolves workspace gradlew and passes ANDROID_SERIAL when installing",
+        withTempDir(async (dir) => {
+            if (process.platform === "win32") {
+                return;
+            }
+            const gradlew = path.join(dir, "gradlew");
+            fs.writeFileSync(
+                gradlew,
+                '#!/bin/sh\necho "SERIAL=$ANDROID_SERIAL JAVA=$JAVA_HOME TASK=$1"\n',
+                { mode: 0o755 },
+            );
+            assert.strictEqual(resolveGradlewPath(dir), gradlew);
+            const res = await runGradleInstallDebugForSerial({
+                workspaceRoot: dir,
+                modulePath: ":app",
+                serial: "emulator-5554",
+                javaHome: "/opt/jdk-21",
+            });
+            assert.strictEqual(res.code, 0);
+            assert.strictEqual(
+                res.stdout.trim(),
+                "SERIAL=emulator-5554 JAVA=/opt/jdk-21 TASK=:app:installDebug",
+            );
+        }),
+    );
+
+    it("quotes Windows gradlew.bat paths containing spaces via cmd.exe /d /s /c", () => {
+        const spec = buildGradleSpawnSpec(
+            "C:\\Users\\Jane Doe\\project\\gradlew.bat",
+            ":app:installDebug",
+            "win32",
+            "C:\\Windows\\System32\\cmd.exe",
+        );
+        assert.deepStrictEqual(spec, {
+            command: "C:\\Windows\\System32\\cmd.exe",
+            args: [
+                "/d",
+                "/s",
+                "/c",
+                '""C:\\Users\\Jane Doe\\project\\gradlew.bat" ":app:installDebug""',
+            ],
+            windowsVerbatimArguments: true,
+        });
+    });
+
+    it("invokes gradlew directly on POSIX platforms", () => {
+        const spec = buildGradleSpawnSpec(
+            "/home/user/my project/gradlew",
+            ":app:installDebug",
+            "linux",
+        );
+        assert.deepStrictEqual(spec, {
+            command: "/home/user/my project/gradlew",
+            args: [":app:installDebug"],
+        });
     });
 });
 
