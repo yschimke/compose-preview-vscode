@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.52.0](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.4...v1.52.0) (2026-11-28)
+
+
+### Features
+
+* add Android device and Compose Preview Simulator picker ([#147](https://github.com/yschimke/compose-preview-vscode/issues/147)) ([2d3440f](https://github.com/yschimke/compose-preview-vscode/commit/2d3440fbde6df449289f774921f0d653806cb25c))
+
+
+### Bug Fixes
+
+* install debug APK only on selected device serial ([#149](https://github.com/yschimke/compose-preview-vscode/issues/149)) ([fad46a3](https://github.com/yschimke/compose-preview-vscode/commit/fad46a3a1ab8d01368a8683c51b782a092e3460e))
+* preserve dynamic-feature split install when targeting device serial ([#150](https://github.com/yschimke/compose-preview-vscode/issues/150)) ([26b2f20](https://github.com/yschimke/compose-preview-vscode/commit/26b2f201e28b8e4dccd869d6648b9241c4b4e717))
+
 ## [1.51.4](https://github.com/yschimke/compose-preview-vscode/compare/v1.51.3...v1.51.4) (2026-11-01)
 
 
