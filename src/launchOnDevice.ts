@@ -227,8 +227,14 @@ export function buildAdbInstallArgs(opts: {
     return args;
 }
 
+interface OutputMetadataFilter {
+    filterType?: string;
+    value?: string;
+}
+
 interface OutputMetadataElement {
     type?: string;
+    filters?: OutputMetadataFilter[];
     outputFile?: string;
 }
 
@@ -236,7 +242,93 @@ interface OutputMetadata {
     elements?: OutputMetadataElement[];
 }
 
-function readDebugApkFromDir(dir: string): string | null {
+/**
+ * Parse the comma/whitespace-separated ABI list returned by
+ * `adb -s <serial> shell getprop ro.product.cpu.abilist`.
+ */
+export function parseAdbAbis(stdout: string): string[] {
+    const out: string[] = [];
+    for (const token of stdout.split(/[\s,]+/)) {
+        const trimmed = token.trim();
+        if (trimmed.length > 0 && !out.includes(trimmed)) {
+            out.push(trimmed);
+        }
+    }
+    return out;
+}
+
+/**
+ * Query a device's supported ABIs in preference order via `adb shell getprop`.
+ * Returns an empty list if `adb` fails or the property is unavailable.
+ */
+export async function queryDeviceAbis(
+    adbPath: string,
+    serial: string,
+): Promise<string[]> {
+    const trimmedSerial = serial.trim();
+    const prefix = trimmedSerial.length > 0 ? ["-s", trimmedSerial] : [];
+    try {
+        const listRes = await runAdb(adbPath, [
+            ...prefix,
+            "shell",
+            "getprop",
+            "ro.product.cpu.abilist",
+        ]);
+        if (listRes.code === 0) {
+            const abis = parseAdbAbis(listRes.stdout);
+            if (abis.length > 0) {
+                return abis;
+            }
+        }
+        const primaryRes = await runAdb(adbPath, [
+            ...prefix,
+            "shell",
+            "getprop",
+            "ro.product.cpu.abi",
+        ]);
+        if (primaryRes.code === 0) {
+            return parseAdbAbis(primaryRes.stdout);
+        }
+    } catch {
+        /* adb unavailable — caller handles missing/default ABI */
+    }
+    return [];
+}
+
+function abiOfElement(element: OutputMetadataElement): string | null {
+    if (!Array.isArray(element.filters)) {
+        return null;
+    }
+    const abiFilter = element.filters.find(
+        (f) => f.filterType === "ABI" && typeof f.value === "string",
+    );
+    return abiFilter?.value?.trim() || null;
+}
+
+function resolveMetadataOutput(
+    dir: string,
+    resolvedDir: string,
+    element: OutputMetadataElement,
+): string | null {
+    if (typeof element.outputFile !== "string") {
+        return null;
+    }
+    const candidate = path.resolve(dir, element.outputFile);
+    if (
+        (candidate === resolvedDir ||
+            candidate.startsWith(resolvedDir + path.sep)) &&
+        fs.existsSync(candidate) &&
+        fs.statSync(candidate).isFile()
+    ) {
+        return candidate;
+    }
+    return null;
+}
+
+function readDebugApkFromDir(
+    dir: string,
+    preferredAbis: ReadonlyArray<string>,
+): string | null {
     const metadataPath = path.join(dir, "output-metadata.json");
     if (fs.existsSync(metadataPath)) {
         try {
@@ -246,28 +338,60 @@ function readDebugApkFromDir(dir: string): string | null {
             const elements = Array.isArray(parsed.elements)
                 ? parsed.elements
                 : [];
-            const ordered = [
-                ...elements.filter(
-                    (e) => e.type === "SINGLE" || e.type === "UNIVERSAL",
-                ),
-                ...elements.filter(
-                    (e) => e.type !== "SINGLE" && e.type !== "UNIVERSAL",
-                ),
-            ];
             const resolvedDir = path.resolve(dir);
-            for (const element of ordered) {
-                if (typeof element.outputFile !== "string") {
-                    continue;
+
+            if (preferredAbis.length > 0) {
+                for (const abi of preferredAbis) {
+                    for (const element of elements) {
+                        if (abiOfElement(element) !== abi) {
+                            continue;
+                        }
+                        const resolved = resolveMetadataOutput(
+                            dir,
+                            resolvedDir,
+                            element,
+                        );
+                        if (resolved) {
+                            return resolved;
+                        }
+                    }
                 }
-                const candidate = path.resolve(dir, element.outputFile);
-                if (
-                    (candidate === resolvedDir ||
-                        candidate.startsWith(resolvedDir + path.sep)) &&
-                    fs.existsSync(candidate) &&
-                    fs.statSync(candidate).isFile()
-                ) {
-                    return candidate;
+            }
+
+            const universalOrSingle = elements.filter(
+                (e) =>
+                    e.type === "SINGLE" ||
+                    e.type === "UNIVERSAL" ||
+                    abiOfElement(e) === null,
+            );
+            for (const element of universalOrSingle) {
+                const resolved = resolveMetadataOutput(
+                    dir,
+                    resolvedDir,
+                    element,
+                );
+                if (resolved) {
+                    return resolved;
                 }
+            }
+
+            if (preferredAbis.length === 0) {
+                for (const element of elements) {
+                    const resolved = resolveMetadataOutput(
+                        dir,
+                        resolvedDir,
+                        element,
+                    );
+                    if (resolved) {
+                        return resolved;
+                    }
+                }
+            }
+
+            // Metadata exists and lists only ABI-filtered APKs that do not
+            // match preferredAbis; do not fall through to an incompatible APK.
+            if (elements.length > 0 && preferredAbis.length > 0) {
+                return null;
             }
         } catch {
             /* fall through to directory scan */
@@ -290,24 +414,40 @@ function readDebugApkFromDir(dir: string): string | null {
         .map((e) => {
             const fullPath = path.join(dir, e.name);
             return {
+                name: e.name,
                 fullPath,
                 mtimeMs: fs.statSync(fullPath).mtimeMs,
             };
         })
         .sort((a, b) => b.mtimeMs - a.mtimeMs);
-    return apks.length > 0 ? apks[0].fullPath : null;
+    if (apks.length === 0) {
+        return null;
+    }
+    if (preferredAbis.length > 0) {
+        for (const abi of preferredAbis) {
+            const match = apks.find((a) => a.name.includes(abi));
+            if (match) {
+                return match.fullPath;
+            }
+        }
+    }
+    return apks[0].fullPath;
 }
 
 /**
  * Locate the built debug APK under a module directory after running
  * `:<module>:assembleDebug`. Checks standard `build/outputs/apk/debug/`
- * first (reading AGP's `output-metadata.json` when present), then scans
- * flavor subdirectories (`build/outputs/apk/<flavor>/debug/`).
+ * first (reading AGP's `output-metadata.json` when present and matching
+ * [preferredAbis] for ABI-split APKs), then scans flavor subdirectories
+ * (`build/outputs/apk/<flavor>/debug/`).
  */
-export function findDebugApk(moduleAbsDir: string): string | null {
+export function findDebugApk(
+    moduleAbsDir: string,
+    preferredAbis: ReadonlyArray<string> = [],
+): string | null {
     const apkRoot = path.join(moduleAbsDir, "build", "outputs", "apk");
     const directDebugDir = path.join(apkRoot, "debug");
-    const direct = readDebugApkFromDir(directDebugDir);
+    const direct = readDebugApkFromDir(directDebugDir, preferredAbis);
     if (direct) {
         return direct;
     }
@@ -324,7 +464,7 @@ export function findDebugApk(moduleAbsDir: string): string | null {
             continue;
         }
         const flavorDebug = path.join(apkRoot, entry.name, "debug");
-        const found = readDebugApkFromDir(flavorDebug);
+        const found = readDebugApkFromDir(flavorDebug, preferredAbis);
         if (found) {
             try {
                 candidates.push({

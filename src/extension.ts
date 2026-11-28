@@ -138,6 +138,7 @@ import {
     collectAndroidApplicationModules,
     findAndroidSdkRoot,
     findDebugApk,
+    queryDeviceAbis,
     resolveAdbPath,
     runAdb,
 } from "./launchOnDevice";
@@ -7379,10 +7380,15 @@ async function launchOnDevice(focusedPreviewId?: string): Promise<void> {
                     gradleService!.workspaceRoot,
                     module.projectDir,
                 );
-                const apkPath = findDebugApk(moduleAbsDir);
+                const deviceAbis = await queryDeviceAbis(adbPath, serial);
+                const apkPath = findDebugApk(moduleAbsDir, deviceAbis);
                 if (!apkPath) {
+                    const abiNote =
+                        deviceAbis.length > 0
+                            ? ` matching ${deviceAbis.join(", ")}`
+                            : "";
                     vscode.window.showErrorMessage(
-                        `Compose Preview: could not find built debug APK under ${module.projectDir}/build/outputs/apk to install on ${serial}.`,
+                        `Compose Preview: could not find built debug APK${abiNote} under ${module.projectDir}/build/outputs/apk to install on ${serial}.`,
                     );
                     return;
                 }
